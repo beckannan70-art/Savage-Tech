@@ -1,0 +1,73 @@
+module.exports = {
+    name: "kickall",
+    category: "group",
+    async execute(sock, msg, args) {
+        const from = msg.key.remoteJid;
+        if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { text: '❌ Group only command.' }, { quoted: msg });
+
+        const sender = msg.key.participant || msg.key.remoteJid;
+        let isAdmin = false;
+        try {
+            const meta = await sock.groupMetadata(from);
+            const senderNumber = sender.split('@')[0].split(':')[0];
+            const participant = meta.participants.find(p => {
+                const pNumber = p.id.split('@')[0].split(':')[0];
+                return pNumber === senderNumber;
+            });
+            isAdmin = participant?.admin === 'admin' || participant?.admin === 'superadmin';
+        } catch (e) {}
+
+        if (!isAdmin) return await sock.sendMessage(from, { text: '❎ You are not worthy of this command.' }, { quoted: msg });
+
+        const metadata = await sock.groupMetadata(from);
+        const targets = metadata.participants.filter(p => p.admin === null).map(p => p.id);
+
+        if (targets.length === 0) return await sock.sendMessage(from, { text: 'No non-admin members to kick.' }, { quoted: msg });
+
+        if (!global.kickallCancel) global.kickallCancel = new Set();
+        global.kickallCancel.add(from);
+
+        await sock.sendMessage(from, { text: `Kickall initiated. Will kick ${targets.length} members in 5 seconds. Type .cancelkick to cancel execution.` }, { quoted: msg });
+
+        let cancelled = false;
+        const cancelCheck = setInterval(() => {
+            if (!global.kickallCancel.has(from)) {
+                cancelled = true;
+                clearInterval(cancelCheck);
+            }
+        }, 500);
+
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        clearInterval(cancelCheck);
+
+        if (cancelled || !global.kickallCancel.has(from)) {
+            global.kickallCancel.delete(from);
+            return await sock.sendMessage(from, { text: 'Kickall cancelled by admin.' }, { quoted: msg });
+        }
+
+        global.kickallCancel.delete(from);
+
+        const savageQuotes = [
+            'Purge protocol engaged. You have been deemed unnecessary.',
+            'The group is cleaning house. You are the dust.',
+            'No mercy for the weak. Removal in progress.',
+            'Your presence has been terminated. Do not return.',
+            'A culling has begun. You are part of the fallen.',
+            'This group does not carry dead weight. Goodbye.',
+            'You are being erased from this chat. No regrets.',
+            'The machine has decided. You are out.',
+            'Savage Tech does not tolerate irrelevance. Removed.',
+            'Consider this an eviction. No appeals.'
+        ];
+        const randomQuote = savageQuotes[Math.floor(Math.random() * savageQuotes.length)];
+
+        await sock.sendMessage(from, { text: `${randomQuote}\n\nRemoving ${targets.length} members:\n${targets.map(j => `@${j.split('@')[0]}`).join('\n')}`, mentions: targets }, { quoted: msg });
+
+        try {
+            await sock.groupParticipantsUpdate(from, targets, "remove");
+            await sock.sendMessage(from, { text: `Kickall completed. Removed ${targets.length} members.` }, { quoted: msg });
+        } catch (err) {
+            await sock.sendMessage(from, { text: `Failed to kick some members: ${err.message}` }, { quoted: msg });
+        }
+    }
+};
