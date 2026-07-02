@@ -8,8 +8,9 @@ const getBuffer = async (url) => {
 
 module.exports = {
   name: 'mp3',
-  pattern: /^\.mp3\s+(.+)/,
-  run: async (sock, message, args) => {
+  category: 'audio',
+  execute: async (sock, msg, args, { isMe }) => {
+    const from = msg.key.remoteJid;
     const input = args.join(' ');
     let quality = '128';
     let query = input;
@@ -22,7 +23,7 @@ module.exports = {
     }
     if (!query) query = input;
 
-    const processingMsg = await sock.sendMessage(message.key.remoteJid, {
+    const processingMsg = await sock.sendMessage(from, {
       text: `🔍 ${query.match(/^https?:\/\//) ? 'Processing URL' : 'Searching for'} *${query}*...`
     });
 
@@ -47,23 +48,22 @@ module.exports = {
         throw new Error('API error – no download URL');
       }
 
-      const { title, thumbnail, download_url } = data.result;
+      const { title, download_url } = data.result;
       const audioBuffer = await getBuffer(download_url);
 
-      await sock.sendMessage(message.key.remoteJid, {
+      await sock.sendMessage(from, {
         audio: audioBuffer,
         mimetype: 'audio/mpeg',
         caption: `🎵 *${title}*\nQuality: ${quality} kbps`
-      });
+      }, { quoted: msg });
 
-      await sock.sendMessage(message.key.remoteJid, { delete: processingMsg.key })
-        .catch(() => {});
+      await sock.sendMessage(from, { delete: processingMsg.key }).catch(() => {});
 
     } catch (error) {
       console.error('MP3 command error:', error);
-      await sock.sendMessage(message.key.remoteJid, {
+      await sock.sendMessage(from, {
         text: `❌ ${error.message || 'Something went wrong'}`
-      });
+      }, { quoted: msg });
     }
   }
 };
