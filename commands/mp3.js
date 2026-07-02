@@ -9,118 +9,92 @@ const execPromise = util.promisify(exec);
 module.exports = {
     name: 'mp3',
     category: 'audio',
-    description: 'Download a song via API (YouTube URL or song name)',
+    description: 'Download a song via ytv4 (YouTube URL or song name)',
     async execute(sock, msg, args) {
         const from = msg.key.remoteJid;
-        const input = args.join(' ');
-        if (!input) return sock.sendMessage(from, { text: '❌ Usage: .mp3 <song name or URL> [quality]' }, { quoted: msg });
-
-        let quality = 'low';
-        const parts = input.split(' ');
-        const last = parts[parts.length - 1];
-        if (['low', 'medium', 'high'].includes(last.toLowerCase())) {
-            quality = last.toLowerCase();
-            args.pop();
-        }
         const query = args.join(' ');
+        if (!query) return sock.sendMessage(from, { text: '❌ Usage: .mp3 <YouTube URL or song name>' }, { quoted: msg });
 
         try {
-            await sock.sendMessage(from, { text: `🔍 ${query.match(/^https?:\/\//) ? 'Processing URL' : 'Searching for'} *${query}*...` }, { quoted: msg });
-
-            let videoUrl, title = 'Unknown', artist = 'Unknown', duration = 'N/A', cover = null;
-
-            const isUrl = query.match(/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/);
-            if (isUrl) {
-                videoUrl = query;
-                const info = await yts({ videoId: videoUrl });
-                if (info) {
-                    title = info.title || 'Unknown';
-                    artist = info.author?.name || 'Unknown';
-                    duration = info.duration?.timestamp || 'N/A';
-                    cover = info.thumbnail || null;
-                }
-            } else {
-                const searchResult = await yts(query);
-                const video = searchResult.videos[0];
-                if (!video) throw new Error('No results found.');
-                videoUrl = video.url;
-                title = video.title;
-                artist = video.author.name || 'Unknown';
-                duration = video.duration.timestamp || 'N/A';
-                cover = video.thumbnail || null;
-            }
-
-            let apiBase = 'https://ravenn.site/download/ytv4';
-            let qualityParam = '';
-            if (quality === 'low') {
-                apiBase = 'https://ravenn.site/download/ytv4';
-                qualityParam = '&quality=128';
-            } else if (quality === 'medium') {
-                apiBase = 'https://ravenn.site/download/ytv3';
-                qualityParam = '&quality=192';
-            } else {
-                apiBase = 'https://ravenn.site/download/ytv5';
-                qualityParam = '&quality=320';
-            }
+            await sock.sendMessage(from, { text: `🎵 Processing: ${query}\n⏳ Fetching audio...` }, { quoted: msg });
 
             let audioUrl = null;
-            let usedApi = apiBase;
-            try {
-                const response = await axios.get(`${apiBase}?url=${encodeURIComponent(videoUrl)}${qualityParam}`, { timeout: 15000 });
-                if (response.data.status && response.data.result) {
-                    audioUrl = response.data.result;
-                } else {
-                    const fallbackRes = await axios.get(`${apiBase}?url=${encodeURIComponent(videoUrl)}`, { timeout: 15000 });
-                    if (fallbackRes.data.status && fallbackRes.data.result) {
-                        audioUrl = fallbackRes.data.result;
+            let title = 'Unknown';
+            let artist = 'Unknown';
+            let duration = 'N/A';
+            let cover = null;
+            let videoUrl = null;
+            let usedFallback = false;
+
+            const isUrl = query.match(/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/);
+
+            if (isUrl) {
+                videoUrl = query;
+                try {
+                    const info = await yts({ videoId: videoUrl });
+                    if (info) {
+                        title = info.title || 'Unknown';
+                        artist = info.author?.name || 'Unknown';
+                        duration = info.duration?.timestamp || 'N/A';
+                        cover = info.thumbnail || null;
                     }
+                } catch (e) {}
+            } else {
+                try {
+                    const searchResult = await yts(query);
+                    const video = searchResult.videos[0];
+                    if (video) {
+                        videoUrl = video.url;
+                        title = video.title || 'Unknown';
+                        artist = video.author.name || 'Unknown';
+                        duration = video.duration.timestamp || 'N/A';
+                        cover = video.thumbnail || null;
+                    } else {
+                        throw new Error('No YouTube results');
+                    }
+                } catch (ytErr) {
+                    console.log('YouTube search failed:', ytErr.message);
                 }
-            } catch (e) {
-                console.log('API attempt failed:', e.message);
-                const endpoints = ['ytv3', 'ytv4', 'ytv5'];
-                for (const ep of endpoints) {
-                    if (audioUrl) break;
-                    try {
-                        const res = await axios.get(`https://ravenn.site/download/${ep}?url=${encodeURIComponent(videoUrl)}`, { timeout: 15000 });
-                        if (res.data.status && res.data.result) {
-                            audioUrl = res.data.result;
-                            usedApi = ep;
-                        }
-                    } catch (err) {}
+            }
+
+            if (videoUrl) {
+                try {
+                    const response = await axios.get(`https://ravenn.site/download/ytv4?url=${encodeURIComponent(videoUrl)}`, { timeout: 15000 });
+                    if (response.data.status && response.data.result) {
+                        audioUrl = response.data.result;
+                        if (title === 'Unknown') title = 'YouTube Audio';
+                    }
+                } catch (ravErr) {
+                    console.log('Ravenn ytv4 error:', ravErr.message);
                 }
             }
 
             if (!audioUrl) {
-                throw new Error('All API endpoints failed. Try again later.');
-            }
-
-            const audioRes = await axios.get(audioUrl, { responseType: 'arraybuffer', timeout: 30000 });
-            let audioBuffer = Buffer.from(audioRes.data);
-
-            const fileSizeMB = audioBuffer.length / (1024 * 1024);
-            let sizeWarning = '';
-            if (fileSizeMB > 15) {
+                console.log('ytv4 failed, falling back to Deezer...');
+                usedFallback = true;
                 try {
-                    const tempFile = path.join(__dirname, `temp_${Date.now()}.mp3`);
-                    fs.writeFileSync(tempFile, audioBuffer);
-                    const outFile = path.join(__dirname, `temp_out_${Date.now()}.mp3`);
-                    await execPromise(`ffmpeg -i "${tempFile}" -b:a 96k "${outFile}" -y`);
-                    const compressedBuffer = fs.readFileSync(outFile);
-                    fs.unlinkSync(tempFile);
-                    fs.unlinkSync(outFile);
-                    if (compressedBuffer.length < audioBuffer.length) {
-                        audioBuffer = compressedBuffer;
-                        sizeWarning = ' (compressed to fit)';
+                    const deezerRes = await axios.get(`https://api.deezer.com/search?q=${encodeURIComponent(query)}`);
+                    const track = deezerRes.data.data[0];
+                    if (track && track.preview) {
+                        audioUrl = track.preview;
+                        title = track.title || 'Unknown';
+                        artist = track.artist.name || 'Unknown';
+                        duration = track.duration ? `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, '0')}` : '30s (preview)';
+                        cover = track.album.cover_medium || null;
+                    } else {
+                        throw new Error('No results from Deezer');
                     }
-                } catch (ffErr) {
-                    console.log('FFmpeg compression failed:', ffErr.message);
-                    sizeWarning = ' (file too large, may fail)';
+                } catch (deezerErr) {
+                    console.log('Deezer error:', deezerErr.message);
+                    return sock.sendMessage(from, { text: '❌ No results found for that song.' }, { quoted: msg });
                 }
             }
 
-            const finalSize = (audioBuffer.length / (1024 * 1024)).toFixed(2);
+            if (!audioUrl) {
+                throw new Error('Could not retrieve audio');
+            }
 
-            const caption = `🎵 *${title}*\n👤 *Artist:* ${artist}\n⏱️ *Duration:* ${duration}\n📦 Size: ${finalSize} MB${sizeWarning}\n⚡ Quality: ${quality}`;
+            const caption = `🎵 *${title}*\n👤 *Artist:* ${artist}\n⏱️ *Duration:* ${duration}${usedFallback ? ' (preview)' : ''}`;
 
             let imageBuffer = null;
             if (cover) {
@@ -136,6 +110,27 @@ module.exports = {
                 await sock.sendMessage(from, { text: caption }, { quoted: msg });
             }
 
+            const audioRes = await axios.get(audioUrl, { responseType: 'arraybuffer', timeout: 30000 });
+            let audioBuffer = Buffer.from(audioRes.data);
+
+            const fileSizeMB = audioBuffer.length / (1024 * 1024);
+            if (fileSizeMB > 15) {
+                try {
+                    const tempFile = path.join(__dirname, `temp_${Date.now()}.mp3`);
+                    const outFile = path.join(__dirname, `temp_out_${Date.now()}.mp3`);
+                    fs.writeFileSync(tempFile, audioBuffer);
+                    await execPromise(`ffmpeg -i "${tempFile}" -b:a 96k "${outFile}" -y`);
+                    const compressedBuffer = fs.readFileSync(outFile);
+                    fs.unlinkSync(tempFile);
+                    fs.unlinkSync(outFile);
+                    if (compressedBuffer.length < audioBuffer.length) {
+                        audioBuffer = compressedBuffer;
+                    }
+                } catch (ffErr) {
+                    console.log('FFmpeg compression failed:', ffErr.message);
+                }
+            }
+
             await sock.sendMessage(from, {
                 audio: audioBuffer,
                 mimetype: 'audio/mpeg',
@@ -145,7 +140,7 @@ module.exports = {
 
         } catch (err) {
             console.error('MP3 error:', err);
-            await sock.sendMessage(from, { text: `❌ Failed: ${err.message}` }, { quoted: msg });
+            await sock.sendMessage(from, { text: `❌ Failed to play: ${err.message}` }, { quoted: msg });
         }
     }
 };
