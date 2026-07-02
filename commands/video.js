@@ -18,10 +18,9 @@ module.exports = {
         try {
             await sock.sendMessage(from, { text: `🎬 Processing: ${query}\n⏳ Fetching video...` }, { quoted: msg });
 
-            let videoDownloadUrl = null;
+            let videoUrl = null;
             let title = 'Unknown';
             let duration = 'N/A';
-            let videoUrl = null;
 
             const isUrl = query.match(/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/);
 
@@ -54,24 +53,27 @@ module.exports = {
                 return sock.sendMessage(from, { text: '❌ Could not find video.' }, { quoted: msg });
             }
 
-            try {
-                const response = await axios.get(`https://ravenn.site/download/ytv4?url=${encodeURIComponent(videoUrl)}`, { timeout: 15000 });
-                if (response.data.status && response.data.result) {
-                    videoDownloadUrl = response.data.result;
-                } else {
-                    throw new Error('API did not return a result');
-                }
-            } catch (ravErr) {
-                console.log('Ravenn ytv4 error:', ravErr.message);
-                return sock.sendMessage(from, { text: '❌ Video download API failed. Please try again later.' }, { quoted: msg });
+            const apiUrl = `https://ravenn.site/download/ytv4?url=${encodeURIComponent(videoUrl)}`;
+            const response = await axios.get(apiUrl, { timeout: 15000 });
+            const data = response.data;
+
+            if (!data.status || !data.result) {
+                throw new Error('API did not return a result');
             }
 
-            const videoRes = await axios.get(videoDownloadUrl, { responseType: 'arraybuffer', timeout: 60000 });
+            const downloadUrl = data.result;
+            const videoRes = await axios.get(downloadUrl, {
+                responseType: 'arraybuffer',
+                timeout: 60000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            });
             let videoBuffer = Buffer.from(videoRes.data);
 
             let finalBuffer = videoBuffer;
             const fileSizeMB = videoBuffer.length / (1024 * 1024);
-            if (fileSizeMB > 15 || !videoDownloadUrl.includes('.mp4')) {
+            if (fileSizeMB > 15) {
                 try {
                     const tempFile = path.join(__dirname, `temp_vid_${Date.now()}.mp4`);
                     const outFile = path.join(__dirname, `temp_out_${Date.now()}.mp4`);
