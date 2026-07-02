@@ -1,30 +1,26 @@
-// mistral.js – Mistral AI
 const axios = require('axios');
 
 module.exports = {
-  name: 'mistral',
-  category: 'ai',
-  description: 'Chat with Mistral AI',
-  async execute(sock, msg, args) {
-    const query = args.join(' ');
-    if (!query) {
-      await sock.sendMessage(msg.key.remoteJid, { text: '❓ What do you want to ask Mistral?' });
-      return;
-    }
+    name: 'mistral',
+    category: 'ai',
+    description: 'Chat with Mistral AI',
+    async execute(sock, msg, args) {
+        const from = msg.key.remoteJid;
+        const query = args.join(' ');
+        if (!query) return sock.sendMessage(from, { text: '❌ Usage: .mistral <message>' }, { quoted: msg });
 
-    try {
-      const url = `https://apis.xwolf.space/api/ai/mistral?q=${encodeURIComponent(query)}`;
-      const response = await axios.get(url);
-
-      if (response.data.status === true) {
-        const reply = response.data.result || 'No response.';
-        await sock.sendMessage(msg.key.remoteJid, { text: `🤖 *Mistral:*\n${reply.slice(0, 2000)}` });
-      } else {
-        await sock.sendMessage(msg.key.remoteJid, { text: `⚠️ API error: ${response.data.error || 'Unknown'}` });
-      }
-    } catch (error) {
-      console.error('Mistral error:', error);
-      await sock.sendMessage(msg.key.remoteJid, { text: '❌ Failed to reach Mistral API.' });
+        try {
+            await sock.sendMessage(from, { text: '🤔 Thinking...' }, { quoted: msg });
+            const response = await axios.get(`https://ravenn.site/ai/mistral?q=${encodeURIComponent(query)}`, { timeout: 30000 });
+            const data = response.data;
+            if (data.status && data.result) {
+                await sock.sendMessage(from, { text: data.result }, { quoted: msg });
+            } else {
+                throw new Error('Invalid response');
+            }
+        } catch (err) {
+            console.error('Mistral error:', err);
+            await sock.sendMessage(from, { text: `❌ Failed: ${err.message}` }, { quoted: msg });
+        }
     }
-  }
 };
