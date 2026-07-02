@@ -1,13 +1,4 @@
-# Paste the code I gave, save & exit
-
-# 3. Stage both files
-git add bot.js commands/antistatusmention.js
-
-# 4. Commit
-git commit -m "Added resetprefix fallback and antistatusmention feature"
-
-# 5. Push to GitHub
-git push origin mainconst settings = require('../settings.js');
+const settings = require('../settings.js');
 
 function cleanJid(jid) {
     if (!jid) return jid;
