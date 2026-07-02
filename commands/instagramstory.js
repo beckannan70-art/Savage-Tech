@@ -1,88 +1,64 @@
 const axios = require('axios');
-const https = require('https');
-const httpsAgent = new https.Agent({ rejectUnauthorized: false });
-
-async function downloadFile(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, { agent: httpsAgent }, (res) => {
-      if (res.statusCode === 302 || res.statusCode === 301) {
-        downloadFile(res.headers.location).then(resolve).catch(reject);
-        return;
-      }
-      const chunks = [];
-      res.on('data', chunk => chunks.push(chunk));
-      res.on('end', () => resolve(Buffer.concat(chunks)));
-      res.on('error', reject);
-    }).on('error', reject);
-  });
-}
 
 module.exports = {
-  name: 'instagramstory',
-  category: 'download',
-  description: 'Download from instagramstory',
-  async execute(sock, msg, args) {
-    const url = args[0];
-    if (!url) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .instagramstory <URL>' });
-    if (!url.startsWith('http')) return sock.sendMessage(msg.key.remoteJid, { text: '❌ Provide a valid URL starting with http:// or https://' });
+    name: 'instagramstory',
+    category: 'download',
+    description: 'Download Instagram story (ravenn.site)',
+    async execute(sock, msg, args) {
+        const from = msg.key.remoteJid;
+        const url = args[0];
+        if (!url) return sock.sendMessage(from, { text: '❌ Provide an Instagram story URL.' }, { quoted: msg });
 
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
+        const senderName = msg.pushName || 'User';
+        const senderJid = msg.key.participant || msg.key.remoteJid;
+        const mention = [senderJid];
 
-    try {
-      const apiUrl = `https://apis.xwolf.space/download/instagram/story?url=${encodeURIComponent(url)}`;
-      const response = await axios.get(apiUrl, { httpsAgent });
-      const data = response.data;
+        try {
+            await sock.sendMessage(from, { text: '⏳ Downloading story...' }, { quoted: msg });
 
-      if (!data.success) throw new Error(data.error || 'Download failed');
+            const apiUrl = `https://ravenn.site/download/instastories?url=${encodeURIComponent(url)}`;
+            const response = await axios.get(apiUrl, { timeout: 15000 });
+            const data = response.data;
 
-      // Determine content type based on command name
-      const isVideo = 'instagramstory'.includes('video') || 'instagramstory'.includes('mp4') || 'instagramstory' === 'tiktok' || 'instagramstory' === 'instagram' || 'instagramstory' === 'facebook' || 'instagramstory' === 'twitter' || 'instagramstory' === 'snapchat';
-      const isAudio = 'instagramstory'.includes('mp3') || 'instagramstory'.includes('audio');
-      const isText = 'media' === 'text';
+            if (!data.status || !data.result) {
+                throw new Error('API returned: ' + JSON.stringify(data));
+            }
 
-      if (isText) {
-        // Send as text (info or search results)
-        let text = `📁 *Download Info (instagramstory)*\n👤 REQUESTED BY: @${senderName}\n🚀 POWERED BY SAVAGE-CORE\n\n`;
-        if (data.result) text += data.result;
-        else if (data.info) text += JSON.stringify(data.info, null, 2);
-        else text += JSON.stringify(data, null, 2);
-        await sock.sendMessage(msg.key.remoteJid, { text: text.slice(0, 2000), mentions: mention });
-        return;
-      }
+            const mediaUrl = data.result;
 
-      // For media: find download URL
-      let downloadUrl = null;
-      if (data.downloadUrl) downloadUrl = data.downloadUrl;
-      else if (data.result && typeof data.result === 'string') downloadUrl = data.result;
-      else if (data.url) downloadUrl = data.url;
-      else if (data.media && data.media.url) downloadUrl = data.media.url;
-      else if (data.video && data.video.url) downloadUrl = data.video.url;
-      else if (data.audio && data.audio.url) downloadUrl = data.audio.url;
-      else if (Array.isArray(data.result) && data.result.length > 0) {
-        // Pick highest quality or first
-        const best = data.result.find(r => r.quality === 'HD') || data.result[0];
-        downloadUrl = best.url || best.downloadUrl;
-      }
-      if (!downloadUrl) throw new Error('No download link found in API response');
+            // Download the media file as buffer
+            const mediaRes = await axios.get(mediaUrl, {
+                responseType: 'arraybuffer',
+                timeout: 30000
+            });
+            const mediaBuffer = Buffer.from(mediaRes.data);
 
-      const fileBuffer = await downloadFile(downloadUrl);
-      const maxSize = isVideo ? 64 * 1024 * 1024 : 16 * 1024 * 1024; // video 64MB, audio 16MB
-      if (fileBuffer.length > maxSize) {
-        await sock.sendMessage(msg.key.remoteJid, { text: `⚠️ File too large (${(fileBuffer.length/1024/1024).toFixed(1)}MB). Direct link: ${downloadUrl}` });
-        return;
-      }
+            // Detect if it's video or image based on URL or content-type
+            const isVideo = mediaUrl.match(/\.mp4$/i) || 
+                            mediaUrl.includes('/video/') ||
+                            mediaRes.headers['content-type']?.includes('video');
 
-      const caption = `📥 *Download: instagramstory*\n👤 REQUESTED BY: @${senderName}\n🚀 POWERED BY SAVAGE-CORE`;
-      if (isVideo) {
-        await sock.sendMessage(msg.key.remoteJid, { video: fileBuffer, caption: caption, mentions: mention });
-      } else {
-        await sock.sendMessage(msg.key.remoteJid, { audio: fileBuffer, mimetype: 'audio/mpeg', fileName: 'download.mp3', caption: caption, mentions: mention });
-      }
-    } catch (err) {
-      console.error('instagramstory error:', err);
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Download failed.\n${err.message}` });
+            const caption = `📥 *Instagram Story*\n👤 Requested by: @${senderName}\n🚀 Powered by Savage-Tech`;
+
+            if (isVideo) {
+                await sock.sendMessage(from, {
+                    video: mediaBuffer,
+                    caption: caption,
+                    mentions: mention
+                }, { quoted: msg });
+            } else {
+                await sock.sendMessage(from, {
+                    image: mediaBuffer,
+                    caption: caption,
+                    mentions: mention
+                }, { quoted: msg });
+            }
+
+        } catch (err) {
+            console.error('Instagram Story error:', err);
+            await sock.sendMessage(from, {
+                text: `❌ Failed to download story: ${err.message || 'Unknown error'}`
+            }, { quoted: msg });
+        }
     }
-  }
 };
