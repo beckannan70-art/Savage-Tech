@@ -1,16 +1,26 @@
 const axios = require('axios');
 
-const handler = async (m, { text, conn }) => {
-    if (!text) return m.reply("Ask me anything. \nExample: .gpt How do I code a loop in JS?");
-    
-    try {
-        const res = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(text)}&lc=en`);
-        const reply = res.data.success;
-        await conn.sendMessage(m.chat, { text: `🤖 *SΛVΛGΞ AI:*\n\n${reply}` }, { quoted: m });
-    } catch (e) {
-        m.reply("AI Core offline. Try again later.");
+module.exports = {
+    name: 'gpt',
+    category: 'ai',
+    description: 'Chat with GPT AI',
+    async execute(sock, msg, args) {
+        const from = msg.key.remoteJid;
+        const query = args.join(' ');
+        if (!query) return sock.sendMessage(from, { text: '❌ Usage: .gpt <message>' }, { quoted: msg });
+
+        try {
+            await sock.sendMessage(from, { text: '🤔 Thinking...' }, { quoted: msg });
+            const response = await axios.get(`https://ravenn.site/ai/gpt?q=${encodeURIComponent(query)}`, { timeout: 30000 });
+            const data = response.data;
+            if (data.status && data.result) {
+                await sock.sendMessage(from, { text: data.result }, { quoted: msg });
+            } else {
+                throw new Error('Invalid response');
+            }
+        } catch (err) {
+            console.error('GPT error:', err);
+            await sock.sendMessage(from, { text: `❌ Failed: ${err.message}` }, { quoted: msg });
+        }
     }
 };
-
-handler.command = ['gpt', 'ask', 'ai'];
-module.exports = handler;
