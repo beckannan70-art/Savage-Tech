@@ -30,18 +30,15 @@ const jokes = [
   "Why did the stadium get hot after the game? Because all the fans left.",
   "What do you call a fish wearing a bowtie? So-fish-ticated."
 ];
+
 module.exports = {
   name: 'jokes',
   category: 'fun',
   description: 'Random joke',
   async execute(sock, msg, args) {
     const random = jokes[Math.floor(Math.random() * jokes.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `😂 *Joke for @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `😂 *Joke*\n\n${random}`
+    }, { quoted: msg });
   }
 };
