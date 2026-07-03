@@ -30,18 +30,15 @@ const roasts = [
   "I'd roast you, but my mom said not to burn trash.",
   "You're the reason shampoo has instructions."
 ];
+
 module.exports = {
   name: 'roasts',
   category: 'fun',
   description: 'Playful roast',
   async execute(sock, msg, args) {
     const random = roasts[Math.floor(Math.random() * roasts.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `🔥 *Roast for @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `🔥 *Roast*\n\n${random}`
+    }, { quoted: msg });
   }
 };
