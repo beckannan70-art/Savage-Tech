@@ -17,13 +17,13 @@ module.exports = {
 
             if (admins.length === 0) return;
 
-            let messageText = `⛓️ **SΛVΛGΞ ADMIN ALERT** ⛓️\n\n`;
+            let messageText = `⛓️ *Admin Alert* ⛓️\n\n`;
             
             admins.forEach((admin) => {
                 messageText += `🔹 @${admin.split('@')[0]}\n`;
             });
 
-            if (args.join(" ")) messageText += `\n📝 **MESSAGE:** ${args.join(" ")}`;
+            if (args.join(" ")) messageText += `\n📝 *Message:* ${args.join(" ")}`;
 
             await sock.sendMessage(from, { 
                 text: messageText, 
@@ -32,7 +32,7 @@ module.exports = {
 
         } catch (e) {
             console.error(e);
-            await sock.sendMessage(from, { text: "❌ **LINK ERROR:** I need Admin rights to read the participant list." }, { quoted: msg });
+            await sock.sendMessage(from, { text: "❌ I need Admin rights to read the participant list." }, { quoted: msg });
         }
     }
 };
