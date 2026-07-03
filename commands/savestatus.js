@@ -28,19 +28,33 @@ module.exports = {
             const buffer = await global.downloadMediaMessage({ message: quoted }, "buffer", {});
             if (!buffer || buffer.length === 0) throw new Error("Download failed");
 
-            // Extract owner number – first try from contextInfo.participant
-            let owner = "Unknown";
+            // Extract the sender JID from the reply context
+            let senderJid = null;
             if (msg.message?.extendedTextMessage?.contextInfo?.participant) {
-                owner = msg.message.extendedTextMessage.contextInfo.participant.split('@')[0];
+                senderJid = msg.message.extendedTextMessage.contextInfo.participant;
             } else if (quoted.key?.participant) {
-                owner = quoted.key.participant.split('@')[0];
+                senderJid = quoted.key.participant;
             } else if (quoted.key?.remoteJid && quoted.key.remoteJid !== "status@broadcast") {
-                owner = quoted.key.remoteJid.split('@')[0];
+                senderJid = quoted.key.remoteJid;
+            }
+
+            // Resolve LID to a phone number if possible
+            let owner = "Unknown";
+            if (senderJid) {
+                // If it's a LID, try to resolve it
+                if (senderJid.endsWith('@lid') && typeof sock.getJidFromLid === 'function') {
+                    try {
+                        const resolved = await sock.getJidFromLid(senderJid);
+                        if (resolved && !resolved.endsWith('@lid')) {
+                            senderJid = resolved;
+                        }
+                    } catch (_) {}
+                }
+                owner = senderJid.split('@')[0];
             }
 
             const caption = `📥 *Status saved*\nFrom: ${owner}\nType: ${mediaType}\n\n_⚡ Powered by Savage Tech_`;
 
-            // Send to the bot owner's DM
             const ownerJid = global.ownerJid;
             if (ownerJid) {
                 if (mediaType === "image") {
@@ -52,7 +66,6 @@ module.exports = {
                 }
                 await sock.sendMessage(from, { text: `✅ Status saved and forwarded to the owner.` }, { quoted: msg });
             } else {
-                // Fallback: send to the command sender
                 if (mediaType === "image") {
                     await sock.sendMessage(from, { image: buffer, caption: caption }, { quoted: msg });
                 } else if (mediaType === "video") {
