@@ -1,6 +1,7 @@
 const axios = require('axios');
 const https = require('https');
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+
 function downloadFile(url) {
   return new Promise((resolve, reject) => {
     https.get(url, { agent: httpsAgent }, (res) => {
@@ -15,27 +16,26 @@ function downloadFile(url) {
     }).on('error', reject);
   });
 }
+
 module.exports = {
   name: '3dpurple',
   category: 'Ephoto',
   description: 'Generate 3d-purple text effect',
   async execute(sock, msg, args) {
     const text = args.join(' ');
-    if (!text) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .3dpurple <text>' });
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mentions = [senderJid];
+    if (!text) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .3dpurple <text>' }, { quoted: msg });
+
     try {
       const apiUrl = `https://apis.xwolf.space/api/textpro/3d-purple?text=${encodeURIComponent(text)}`;
       const response = await axios.get(apiUrl, { httpsAgent });
       if (!response.data.success) throw new Error(response.data.error || 'API failure');
       if (!response.data.imageUrl) throw new Error('No imageUrl in response');
       const imgBuffer = await downloadFile(response.data.imageUrl);
-      const caption = `🎨 *Text Effect: 3dpurple*\n👤 REQUESTED BY: @${senderName}\n🚀 POWERED BY SAVAGE-CORE`;
-      await sock.sendMessage(msg.key.remoteJid, { image: imgBuffer, caption: caption, mentions: mentions });
+      const caption = `🎨 *Text Effect: 3dpurple*\n🚀 POWERED BY SAVAGE-CORE`;
+      await sock.sendMessage(msg.key.remoteJid, { image: imgBuffer, caption: caption }, { quoted: msg });
     } catch (err) {
       console.error('3dpurple error:', err);
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Failed to generate image.\n${err.message}` });
+      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Failed to generate image.\n${err.message}` }, { quoted: msg });
     }
   }
 };
