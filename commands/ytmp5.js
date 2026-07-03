@@ -9,7 +9,7 @@ module.exports = {
         const from = msg.key.remoteJid;
         const query = args.join(' ');
         if (!query) {
-            return sock.sendMessage(from, { text: '🎵 Usage: .ytmp5 <song name or YouTube URL>' }, { quoted: msg });
+            return sock.sendMessage(from, { text: '❌ Usage: .ytmp5 <song name or YouTube URL>' }, { quoted: msg });
         }
 
         await sock.sendMessage(from, { text: '🔍 Searching...' }, { quoted: msg });
@@ -25,9 +25,7 @@ module.exports = {
             }
 
             const endpoint = `https://apis.xwolf.space/download/ytmp5?url=${encodeURIComponent(videoUrl)}`;
-            const response = await axios({
-                method: 'get',
-                url: endpoint,
+            const response = await axios.get(endpoint, {
                 timeout: 60000,
                 headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36' }
             });
@@ -48,10 +46,9 @@ module.exports = {
                 return sock.sendMessage(from, { text: '❌ No download URLs found. Try another song or use .play' }, { quoted: msg });
             }
 
-            let caption = `🎵 *YTMP5 - LINKS*\n\n`;
+            let caption = `🎵 *Download Links*\n\n`;
             if (mp3Url) caption += `🎵 *MP3:*\n${mp3Url}\n\n`;
             if (mp4Url) caption += `🎥 *MP4:*\n${mp4Url}\n\n`;
-            caption += `_⚡ Powered by Savage-Tech_`;
 
             await sock.sendMessage(from, { text: caption }, { quoted: msg });
         } catch (error) {
