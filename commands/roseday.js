@@ -30,18 +30,15 @@ const roseDay = [
   "Roses may wilt, but my wishes for you will stay fresh forever.",
   "Enjoy this day dedicated to love and roses. Happy Rose Day!"
 ];
+
 module.exports = {
   name: 'roseday',
   category: 'fun',
   description: 'Rose Day wishes',
   async execute(sock, msg, args) {
     const random = roseDay[Math.floor(Math.random() * roseDay.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `🌹 *Rose Day wish for @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `🌹 *Rose Day wish*\n\n${random}`
+    }, { quoted: msg });
   }
 };
