@@ -7,7 +7,7 @@ module.exports = {
   async execute(sock, msg, args) {
     const from = msg.key.remoteJid;
     const plate = args[0];
-    if (!plate) return sock.sendMessage(from, { text: '❌ Usage: .numberplate <UK plate, e.g., AB51ABC>' });
+    if (!plate) return await sock.sendMessage(from, { text: '❌ Usage: .numberplate <UK plate, e.g., AB51ABC>' }, { quoted: msg });
 
     try {
       const res = await axios.get(`https://apis.xwolf.space/api/stalk/numberplate?plate=${encodeURIComponent(plate)}`);
@@ -28,11 +28,11 @@ module.exports = {
           `🔗 *Source:* DVLA UK`;
         await sock.sendMessage(from, { text: caption }, { quoted: msg });
       } else {
-        await sock.sendMessage(from, { text: `❌ Number plate lookup failed: ${data.error || 'Invalid UK plate or not found'}` });
+        await sock.sendMessage(from, { text: `❌ Number plate lookup failed: ${data.error || 'Invalid UK plate or not found'}` }, { quoted: msg });
       }
     } catch (err) {
       console.error(err);
-      await sock.sendMessage(from, { text: '❌ Network error or invalid number plate.' });
+      await sock.sendMessage(from, { text: '❌ Network error or invalid number plate.' }, { quoted: msg });
     }
   }
 };
