@@ -1,3 +1,5 @@
+const settings = require('../settings.js');
+
 module.exports = {
     name: 'readreceipts',
     category: 'owner',
@@ -23,6 +25,7 @@ module.exports = {
         }
 
         global.autoRead = option === 'on';
+        settings.setGlobal('autoRead', global.autoRead);
         await sock.sendMessage(from, { text: `✅ Read receipts ${global.autoRead ? 'enabled' : 'disabled'}.` }, { quoted: msg });
     }
 };
