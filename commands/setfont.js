@@ -1,3 +1,5 @@
+const settings = require('../settings.js');
+
 const fontMaps = {
     default: (t) => t,
     smallcaps: (t) => t.toUpperCase().replace(/[A-Z]/g, c => String.fromCodePoint(c.charCodeAt(0) + 0x1D00)),
@@ -64,9 +66,9 @@ module.exports = {
     async execute(sock, msg, args, { isArchitect }) {
         const from = msg.key.remoteJid;
         const sender = msg.key.participant || msg.key.remoteJid;
-        const isSudo = global.sudo && (global.sudo.has ? global.sudo.has(sender) : global.sudo.includes(sender));
+        const isSudo = global.sudoUsers?.includes(sender);
         if (!isArchitect && !isSudo) {
-            return sock.sendMessage(from, { text: '❌ Owner or sudo only command.' }, { quoted: msg });
+            return await sock.sendMessage(from, { text: '❌ Owner or sudo only command.' }, { quoted: msg });
         }
 
         const fontName = args[0]?.toLowerCase();
@@ -80,6 +82,7 @@ module.exports = {
             return;
         }
         global.botFont = fontName;
+        settings.setGlobal('botFont', fontName);
         await sock.sendMessage(from, { text: `✅ Bot font globally set to: ${fontName}\nAll my replies everywhere will use this font.` }, { quoted: msg });
     }
 };
