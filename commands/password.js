@@ -1,9 +1,11 @@
 const crypto = require('crypto');
+
 module.exports = {
   name: 'password',
   category: 'tools',
   description: 'Generate secure random password',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     let length = parseInt(args[0]) || 12;
     if (length < 6) length = 6;
     if (length > 32) length = 32;
@@ -13,8 +15,8 @@ module.exports = {
       const randomIndex = crypto.randomInt(0, chars.length);
       password += chars[randomIndex];
     }
-    const sender = msg.pushName || 'User';
-    const jid = msg.key.participant || msg.key.remoteJid;
-    await sock.sendMessage(msg.key.remoteJid, { text: `🔑 *Generated password (${length} chars) for @${sender}*\n\n${password}\n\n🚀 POWERED BY SAVAGE-CORE`, mentions: [jid] });
+    await sock.sendMessage(from, {
+      text: `🔑 *Generated password (${length} chars)*\n\n${password}`
+    }, { quoted: msg });
   }
 };
