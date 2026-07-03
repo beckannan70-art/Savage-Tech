@@ -6,13 +6,12 @@ module.exports = {
   category: 'tools',
   description: 'Upload an image URL to ImgBB and get a direct link',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     const imageUrl = args[0];
     if (!imageUrl || !imageUrl.startsWith('http')) {
-      return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .imgbb <image_url>' });
+      return sock.sendMessage(from, { text: '❓ Usage: .imgbb <image_url>' }, { quoted: msg });
     }
-    const sender = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
+
     try {
       const form = new FormData();
       form.append('image', imageUrl);
@@ -20,13 +19,12 @@ module.exports = {
         headers: form.getHeaders(),
       });
       const uploadedUrl = res.data.data.url;
-      await sock.sendMessage(msg.key.remoteJid, {
-        text: `🖼️ *ImgBB upload for @${sender}*\n\n${uploadedUrl}\n\n🚀 POWERED BY SAVAGE-CORE`,
-        mentions: mention,
-      });
+      await sock.sendMessage(from, {
+        text: `🖼️ *ImgBB upload*\n\n${uploadedUrl}`
+      }, { quoted: msg });
     } catch (err) {
       console.error('ImgBB error:', err);
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Upload failed: ${err.message}` });
+      await sock.sendMessage(from, { text: `❌ Upload failed: ${err.message}` }, { quoted: msg });
     }
   },
 };
