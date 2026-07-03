@@ -12,7 +12,7 @@ function getHostPlatform() {
   if (process.env.SERVER_ID || process.env.PTERODACTYL) return 'Panel';
   if (fs.existsSync('/home/container') || process.env.USER === 'container') return 'Panel';
   if (os.platform() === 'android' && process.env.PREFIX === '/data/data/com.termux/usr') return 'Termux (Android)';
-  if (os.platform() === 'linux') return 'Linux (VPS / Dedicated)';
+  if (os.platform() === 'linux') return 'Panel';
   if (os.platform() === 'win32') return 'Windows';
   if (os.platform() === 'darwin') return 'macOS';
   return 'Unknown / Local';
