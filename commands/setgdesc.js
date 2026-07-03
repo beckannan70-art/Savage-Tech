@@ -20,7 +20,7 @@ module.exports = {
 
         try {
             await sock.groupUpdateDescription(from, newDesc);
-            await sock.sendMessage(from, { text: `✅ *GROUP DESCRIPTION UPDATED:* \n\n"${newDesc}"` }, { quoted: msg });
+            await sock.sendMessage(from, { text: `✅ *GROUP DESCRIPTION UPDATED:* \n\n${newDesc}` }, { quoted: msg });
         } catch (err) {
             await sock.sendMessage(from, { text: '❌ Error: Make sure I am an Admin!' }, { quoted: msg });
         }
