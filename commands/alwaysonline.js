@@ -1,3 +1,5 @@
+const settings = require('../settings.js');
+
 module.exports = {
     name: "alwaysonline",
     category: "owner",
@@ -13,6 +15,8 @@ module.exports = {
         } else {
             global.alwaysOnline = !global.alwaysOnline;
         }
+        settings.setGlobal('alwaysOnline', global.alwaysOnline);
+
         const status = global.alwaysOnline ? "enabled" : "disabled";
         await sock.sendMessage(from, { text: `✅ Always Online ${status}.` }, { quoted: msg });
     }
