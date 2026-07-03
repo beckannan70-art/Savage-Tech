@@ -7,16 +7,16 @@ module.exports = {
   category: 'sports',
   description: 'Get league standings table',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     const query = args.join(' ');
-    if (!query) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .leaguestanding <league name>' });
-    const sender = msg.pushName || 'User';
-    const jid = msg.key.participant || msg.key.remoteJid;
+    if (!query) return sock.sendMessage(from, { text: '❓ Usage: .leaguestanding <league name>' }, { quoted: msg });
+
     try {
-      await sock.sendMessage(msg.key.remoteJid, { text: `📊 Fetching standings for "${query}"...`, mentions: [jid] });
+      await sock.sendMessage(from, { text: `📊 Fetching standings for "${query}"...` }, { quoted: msg });
       const res = await axios.get(`https://apis.xwolf.space/api/sports/league/table?q=${encodeURIComponent(query)}`, { httpsAgent: agent });
       if (!res.data.success || !res.data.result) throw new Error('No table');
       const teams = res.data.result;
-      let text = `🏆 *Standings: ${query}*\n👤 REQUESTED BY: @${sender}\n\n`;
+      let text = `🏆 *Standings: ${query}*\n\n`;
       if (Array.isArray(teams)) {
         text += `# | Team                | P | W | D | L | GF | GA | Pts\n`;
         teams.slice(0, 20).forEach((t, i) => {
@@ -25,12 +25,9 @@ module.exports = {
       } else {
         text += JSON.stringify(teams, null, 2);
       }
-      text += `\n┍━━━━━━━━━━━━━━━╼
-┃ 🚀 SΛVΛGΞ-TΞCH OS
-┕━━━━━━━━━━━━━━━╼`;
-      await sock.sendMessage(msg.key.remoteJid, { text: text.slice(0, 2000), mentions: [jid] });
+      await sock.sendMessage(from, { text: text.slice(0, 2000) }, { quoted: msg });
     } catch (err) {
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Standings error: ${err.message}` });
+      await sock.sendMessage(from, { text: `❌ Standings error: ${err.message}` }, { quoted: msg });
     }
   }
 };
