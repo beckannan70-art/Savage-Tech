@@ -9,7 +9,7 @@ module.exports = {
     try {
       const res = await axios.get('https://apis.xwolf.space/api/pokemon/types');
       const data = res.data;
-      if (!data.success) return sock.sendMessage(from, { text: '❌ Could not fetch Pokemon types.' });
+      if (!data.success) return await sock.sendMessage(from, { text: '❌ Could not fetch Pokemon types.' }, { quoted: msg });
       const types = data.types || [];
       let text = '🔖 *POKEMON TYPES*\n\n';
       for (const t of types) {
@@ -18,7 +18,7 @@ module.exports = {
       await sock.sendMessage(from, { text }, { quoted: msg });
     } catch (err) {
       console.error(err);
-      await sock.sendMessage(from, { text: '❌ API error.' });
+      await sock.sendMessage(from, { text: '❌ API error.' }, { quoted: msg });
     }
   }
 };
