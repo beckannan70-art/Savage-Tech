@@ -6,7 +6,7 @@ module.exports = {
         const from = msg.key.remoteJid;
         const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         if (!quoted) {
-            return await sock.sendMessage(from, { text: "❌ Reply to a status message (story)." }, { quoted: msg });
+            return sock.sendMessage(from, { text: "❌ Reply to a status message (story)." }, { quoted: msg });
         }
 
         let mediaType = null;
@@ -21,33 +21,26 @@ module.exports = {
             mediaType = "audio";
             mediaMsg = quoted.audioMessage;
         } else {
-            return await sock.sendMessage(from, { text: "❌ This is not a status message with image/video/audio. Reply to a story." }, { quoted: msg });
+            return sock.sendMessage(from, { text: "❌ This is not a status message with image/video/audio. Reply to a story." }, { quoted: msg });
         }
 
         try {
-            // Construct a proper message object for download
-            const quotedMsg = {
-                key: {
-                    remoteJid: quoted.key?.remoteJid || 'status@broadcast',
-                    id: quoted.key?.id,
-                    participant: quoted.key?.participant,
-                    fromMe: false
-                },
-                message: quoted
-            };
-
-            const buffer = await global.downloadMediaMessage(quotedMsg, "buffer", {});
+            const buffer = await global.downloadMediaMessage({ message: quoted }, "buffer", {});
             if (!buffer || buffer.length === 0) throw new Error("Download failed");
 
+            // Extract owner number – first try from contextInfo.participant
             let owner = "Unknown";
-            if (quoted.key?.participant) {
+            if (msg.message?.extendedTextMessage?.contextInfo?.participant) {
+                owner = msg.message.extendedTextMessage.contextInfo.participant.split('@')[0];
+            } else if (quoted.key?.participant) {
                 owner = quoted.key.participant.split('@')[0];
             } else if (quoted.key?.remoteJid && quoted.key.remoteJid !== "status@broadcast") {
                 owner = quoted.key.remoteJid.split('@')[0];
             }
 
-            const caption = `📥 *Status saved*\nFrom: ${owner}\nType: ${mediaType}`;
+            const caption = `📥 *Status saved*\nFrom: ${owner}\nType: ${mediaType}\n\n_⚡ Powered by Savage Tech_`;
 
+            // Send to the bot owner's DM
             const ownerJid = global.ownerJid;
             if (ownerJid) {
                 if (mediaType === "image") {
@@ -59,6 +52,7 @@ module.exports = {
                 }
                 await sock.sendMessage(from, { text: `✅ Status saved and forwarded to the owner.` }, { quoted: msg });
             } else {
+                // Fallback: send to the command sender
                 if (mediaType === "image") {
                     await sock.sendMessage(from, { image: buffer, caption: caption }, { quoted: msg });
                 } else if (mediaType === "video") {
