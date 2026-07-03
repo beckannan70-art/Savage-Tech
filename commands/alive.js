@@ -1,10 +1,26 @@
+const os = require('os');
+
+function getHostPlatform() {
+    if (process.env.DYNO) return 'Heroku (Dyno)';
+    if (process.env.RENDER) return 'Render';
+    if (process.env.VERCEL) return 'Vercel';
+    if (process.env.KOYEB) return 'Koyeb';
+    if (process.env.RAILWAY_ENVIRONMENT) return 'Railway';
+    if (process.env.REPLIT_DB_URL) return 'Replit';
+    if (process.env.COOLIFY) return 'Coolify';
+    if (os.platform() === 'android' && process.env.PREFIX === '/data/data/com.termux/usr') return 'Termux (Android)';
+    if (os.platform() === 'linux') return 'Linux (Panel)';
+    if (os.platform() === 'win32') return 'Windows';
+    if (os.platform() === 'darwin') return 'macOS';
+    return 'Unknown / Local';
+}
+
 module.exports = {
     category: 'engine',
     name: 'alive',
     async execute(sock, msg, args) {
         const from = msg.key.remoteJid;
-        
-        // Cold Savage Quotes
+
         const quotes = [
             "Be a wolf. The sheep are boring.",
             "Silence is the best response to a fool.",
@@ -19,15 +35,17 @@ module.exports = {
         ];
 
         const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+        const host = getHostPlatform();
+        const speed = ((Date.now() - msg.messageTimestamp * 1000) / 1000).toFixed(3);
 
         const statusText = `
-*SAVAGE-TECH V1 IS LIVE* ⚡
+*SAVAGE-TECH IS LIVE* ⚡
 
-"${randomQuote}"
+${randomQuote}
 
-*Speed:* 0.001ms
+*Speed:* ${speed} ms
 *Status:* Online
-*Host:* Termux (Android)`;
+*Host:* ${host}`;
 
         await sock.sendMessage(from, { 
             image: { url: 'https://i.supaimg.com/57b03ae1-422b-4801-b5d2-661ece6d38ae/e91b4f95-67b1-4819-b737-b033df5d7e3b.jpg' }, 
