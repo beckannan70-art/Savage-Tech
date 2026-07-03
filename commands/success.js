@@ -30,18 +30,16 @@ const success = [
   "Success is not final, failure is not fatal: it is the courage to continue that counts.",
   "Don't watch the clock; do what it does. Keep going."
 ];
+
 module.exports = {
   name: 'success',
   category: 'fun',
   description: 'Motivation about success',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     const random = success[Math.floor(Math.random() * success.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `🏆 *Success thought for @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(from, {
+      text: `🏆 *Success Thought*\n\n${random}`
+    }, { quoted: msg });
   }
 };
