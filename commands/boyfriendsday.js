@@ -30,18 +30,15 @@ const bfDay = [
   "You're my heart, my home, my everything.",
   "I love you always. Enjoy your day!"
 ];
+
 module.exports = {
   name: 'boyfriendsday',
   category: 'fun',
   description: 'Boyfriend’s Day wishes',
   async execute(sock, msg, args) {
     const random = bfDay[Math.floor(Math.random() * bfDay.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `💙 *Happy Boyfriend's Day, @${senderName}!*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `💙 *Happy Boyfriend's Day!*\n\n${random}`
+    }, { quoted: msg });
   }
 };
