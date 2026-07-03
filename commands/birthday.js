@@ -30,18 +30,15 @@ const birthday = [
   "Enjoy your day – you've earned it!",
   "Happy birthday! May this year bring you everything you've wished for."
 ];
+
 module.exports = {
   name: 'birthday',
   category: 'fun',
   description: 'Birthday wish',
   async execute(sock, msg, args) {
     const random = birthday[Math.floor(Math.random() * birthday.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `🎂 *Happy Birthday, @${senderName}!*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `🎂 *Happy Birthday!*\n\n${random}`
+    }, { quoted: msg });
   }
 };
