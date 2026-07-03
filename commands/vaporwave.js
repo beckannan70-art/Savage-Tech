@@ -1,31 +1,67 @@
 const axios = require('axios');
 const https = require('https');
-const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+
+const agent = new https.Agent({ rejectUnauthorized: false });
+
 module.exports = {
-  name: 'vaporwave',
-  category: 'Audio Effects',
-  description: 'Apply vaporwave effect to audio',
-  async execute(sock, msg, args) {
-    const url = args[0];
-    if (!url) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .vaporwave <audio_url>' });
-    if (!url.startsWith('http')) return sock.sendMessage(msg.key.remoteJid, { text: '❌ Invalid URL.' });
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    try {
-      await sock.sendMessage(msg.key.remoteJid, { text: '🎧 Applying vaporwave effect for @' + senderName + '...', mentions: mention });
-      const apiUrl = 'https://apis.xwolf.space/api/audio/vaporwave?url=' + encodeURIComponent(url);
-      const response = await axios.get(apiUrl, { httpsAgent });
-      let base64Audio = response.data.result?.base64Data || response.data.base64Data;
-      if (!base64Audio && typeof response.data.result === 'string') base64Audio = response.data.result;
-      if (!base64Audio) throw new Error('No audio data in response');
-      if (base64Audio.startsWith('data:audio')) base64Audio = base64Audio.split(',')[1];
-      const audioBuffer = Buffer.from(base64Audio, 'base64');
-      const caption = '✨ vaporwave Effect Applied\n👤 REQUESTED BY: @' + senderName + '\n🚀 POWERED BY SAVAGE-CORE';
-      await sock.sendMessage(msg.key.remoteJid, { audio: audioBuffer, mimetype: 'audio/mpeg', fileName: 'vaporwave_effect.mp3', caption: caption, mentions: mention });
-    } catch (err) {
-      console.error('vaporwave error:', err);
-      await sock.sendMessage(msg.key.remoteJid, { text: '❌ Failed: ' + err.message });
+    name: 'vaporwave',
+    category: 'Audio Effects',
+    description: 'Apply vaporwave effect to an audio/video URL',
+    async execute(sock, msg, args) {
+        const from = msg.key.remoteJid;
+        let url = args[0];
+
+        if (!url && msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+            const quoted = msg.message.extendedTextMessage.contextInfo.quotedMessage;
+            if (quoted.conversation) {
+                const match = quoted.conversation.match(/(https?:\/\/[^\s]+)/);
+                if (match) url = match[0];
+            } else if (quoted.extendedTextMessage?.text) {
+                const match = quoted.extendedTextMessage.text.match(/(https?:\/\/[^\s]+)/);
+                if (match) url = match[0];
+            }
+        }
+
+        if (!url) {
+            return sock.sendMessage(from, {
+                text: '❌ Provide an audio/video URL, or reply to a message with one.\nExample: `.vaporwave https://youtu.be/xxx`'
+            }, { quoted: msg });
+        }
+
+        if (!url.startsWith('http')) {
+            return sock.sendMessage(from, { text: '❌ Invalid URL.' }, { quoted: msg });
+        }
+
+        try {
+            await sock.sendMessage(from, { text: '🎧 Applying vaporwave effect...' }, { quoted: msg });
+
+            const apiKey = 'wxa_f_9ddecf073b';
+            const apiUrl = `https://apis.xwolf.space/api/audio/vaporwave?url=${encodeURIComponent(url)}&key=${apiKey}`;
+            const response = await axios.get(apiUrl, { httpsAgent: agent, timeout: 30000 });
+
+            const data = response.data;
+            if (!data.success || !data.result || !data.result.downloadUrl) {
+                throw new Error('Invalid API response: ' + JSON.stringify(data));
+            }
+
+            const downloadUrl = data.result.downloadUrl;
+            const audioRes = await axios.get(downloadUrl, {
+                responseType: 'arraybuffer',
+                httpsAgent: agent,
+                timeout: 60000
+            });
+            const audioBuffer = Buffer.from(audioRes.data);
+
+            await sock.sendMessage(from, {
+                audio: audioBuffer,
+                mimetype: 'audio/mpeg',
+                fileName: 'vaporwave_effect.mp3',
+                caption: '✅ Vaporwave effect applied.'
+            }, { quoted: msg });
+
+        } catch (err) {
+            console.error('Vaporwave effect error:', err);
+            await sock.sendMessage(from, { text: `❌ Failed: ${err.message}` }, { quoted: msg });
+        }
     }
-  }
 };
