@@ -9,7 +9,9 @@ module.exports = {
     try {
       const res = await axios.get('https://apis.xwolf.space/api/nasa/neo');
       const data = res.data;
-      if (!data.success || !data.neo) return sock.sendMessage(from, { text: '❌ No NEO data available.' });
+      if (!data.success || !data.neo) {
+        return await sock.sendMessage(from, { text: '❌ No NEO data available.' }, { quoted: msg });
+      }
       const neos = data.neo.slice(0, 5);
       let text = '☄️ *NEAR EARTH OBJECTS (TODAY)*\n\n';
       for (const obj of neos) {
@@ -22,7 +24,7 @@ module.exports = {
       await sock.sendMessage(from, { text }, { quoted: msg });
     } catch (err) {
       console.error(err);
-      await sock.sendMessage(from, { text: '❌ Failed to fetch asteroid data.' });
+      await sock.sendMessage(from, { text: '❌ Failed to fetch asteroid data.' }, { quoted: msg });
     }
   }
 };
