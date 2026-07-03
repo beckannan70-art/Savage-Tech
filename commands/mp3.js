@@ -9,7 +9,7 @@ const execPromise = util.promisify(exec);
 module.exports = {
     name: 'mp3',
     category: 'audio',
-    description: 'Download a song via ytv4 (YouTube URL or song name)',
+    description: 'Download a song (Ravenn primary, Wolf fallback, Deezer last)',
     async execute(sock, msg, args) {
         const from = msg.key.remoteJid;
         const query = args.join(' ');
@@ -69,8 +69,22 @@ module.exports = {
                 }
             }
 
+            if (!audioUrl && videoUrl) {
+                try {
+                    const apiKey = 'wxa_f_28d599362e';
+                    const wolfUrl = `https://apis.xwolf.space/download/mp3?url=${encodeURIComponent(videoUrl)}&q=${encodeURIComponent(query)}&key=${apiKey}`;
+                    const wolfRes = await axios.get(wolfUrl, { timeout: 15000 });
+                    if (wolfRes.data.success) {
+                        audioUrl = wolfRes.data.result?.downloadUrl || wolfRes.data.downloadUrl || wolfRes.data.result?.url || wolfRes.data.url;
+                        if (audioUrl && title === 'Unknown') title = 'YouTube Audio';
+                    }
+                } catch (wolfErr) {
+                    console.log('Wolf API failed:', wolfErr.message);
+                }
+            }
+
             if (!audioUrl) {
-                console.log('ytv4 failed, falling back to Deezer...');
+                console.log('Ravenn & Wolf failed, falling back to Deezer...');
                 usedFallback = true;
                 try {
                     const deezerRes = await axios.get(`https://api.deezer.com/search?q=${encodeURIComponent(query)}`);
