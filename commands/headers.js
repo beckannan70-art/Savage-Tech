@@ -1,27 +1,27 @@
 const axios = require('axios');
 const https = require('https');
 const agent = new https.Agent({ rejectUnauthorized: false });
+
 module.exports = {
   name: 'headers',
   category: 'ethical hacking',
   description: 'Fetch HTTP response headers',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     let url = args[0];
-    if (!url) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .headers <url>' });
+    if (!url) return sock.sendMessage(from, { text: '❓ Usage: .headers <url>' }, { quoted: msg });
     if (!url.startsWith('http')) url = 'https://' + url;
-    const sender = msg.pushName || 'User';
-    const jid = msg.key.participant || msg.key.remoteJid;
+
     try {
-      await sock.sendMessage(msg.key.remoteJid, { text: `📡 Fetching headers from ${url}...`, mentions: [jid] });
+      await sock.sendMessage(from, { text: `📡 Fetching headers from ${url}...` }, { quoted: msg });
       const res = await axios.head(url, { httpsAgent: agent, timeout: 10000 });
       let text = `📋 Headers for ${url}\n`;
       for (const [key, value] of Object.entries(res.headers)) {
         text += `${key}: ${value}\n`;
       }
-      const output = `🛡️ *HTTP Headers*\n👤 REQUESTED BY: @${sender}\n🎯 Target: ${url}\n\n${text.slice(0, 1800)}\n\n🚀 POWERED BY SAVAGE-CORE`;
-      await sock.sendMessage(msg.key.remoteJid, { text: output, mentions: [jid] });
+      await sock.sendMessage(from, { text: text.slice(0, 2000) }, { quoted: msg });
     } catch (err) {
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Headers fetch failed: ${err.message}` });
+      await sock.sendMessage(from, { text: `❌ Headers fetch failed: ${err.message}` }, { quoted: msg });
     }
   }
 };
