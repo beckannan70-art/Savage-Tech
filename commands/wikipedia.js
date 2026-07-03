@@ -1,20 +1,30 @@
 const axios = require('axios');
 const https = require('https');
+
 const agent = new https.Agent({ rejectUnauthorized: false });
 
 module.exports = {
-  name: 'wikipedia',
-  category: 'tools',
-  description: 'Get Wikipedia article summary',
-  async execute(sock, msg, args) {
-    const query = args.join(' ');
-    if (!query) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .wikipedia <topic>' });
-    const sender = msg.pushName || 'User';
-    const jid = msg.key.participant || msg.key.remoteJid;
-    try {
-      const res = await axios.get(`https://apis.xwolf.space/api/tools/wikipedia?query=${encodeURIComponent(query)}`, { httpsAgent: agent });
-      const result = res.data.result || res.data.summary || 'No result';
-      await sock.sendMessage(msg.key.remoteJid, { text: `📖 *Wikipedia: ${query} for @${sender}*\n\n${result.slice(0, 1900)}\n\n🚀 POWERED BY SAVAGE-CORE`, mentions: [jid] });
-    } catch (err) { await sock.sendMessage(msg.key.remoteJid, { text: `❌ Error: ${err.message}` }); }
-  }
+    name: 'wikipedia',
+    category: 'tools',
+    description: 'Get Wikipedia article summary',
+    async execute(sock, msg, args) {
+        const from = msg.key.remoteJid;
+        const query = args.join(' ');
+        if (!query) {
+            return sock.sendMessage(from, { text: '❌ Usage: .wikipedia <topic>' }, { quoted: msg });
+        }
+
+        try {
+            const apiKey = 'wxa_f_9ddecf073b';
+            const apiUrl = `https://apis.xwolf.space/api/tools/wikipedia?query=${encodeURIComponent(query)}&key=${apiKey}`;
+            const response = await axios.get(apiUrl, { httpsAgent: agent, timeout: 15000 });
+            const data = response.data;
+
+            const result = data.result || data.summary || 'No result';
+            await sock.sendMessage(from, { text: `📖 *Wikipedia: ${query}*\n\n${result.slice(0, 1900)}` }, { quoted: msg });
+        } catch (err) {
+            console.error('Wikipedia error:', err);
+            await sock.sendMessage(from, { text: `❌ Error: ${err.message}` }, { quoted: msg });
+        }
+    }
 };
