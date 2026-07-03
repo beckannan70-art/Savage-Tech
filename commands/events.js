@@ -23,8 +23,8 @@ module.exports = {
             "You’ve been processed. Welcome to the order."
         ];
         const quote = quotes[Math.floor(Math.random() * quotes.length)];
-        await sock.sendMessage(id, { 
-            text: `☣️ *WELCOME TO ${groupName}*\n\n@${participant.split('@')[0]}\n"_${quote}_"`,
+        await sock.sendMessage(id, {
+            text: `😈 *WELCOME TO ${groupName}*\n\n@${participant.split('@')[0]}\n${quote}`,
             mentions: [participant]
         });
     },
@@ -53,8 +53,8 @@ module.exports = {
             "Farewell. Your memory will be overwritten."
         ];
         const quote = quotes[Math.floor(Math.random() * quotes.length)];
-        await sock.sendMessage(id, { 
-            text: `☢️ *PERIMETER UPDATE*\n\n@${participant.split('@')[0]}\n"_${quote}_"`,
+        await sock.sendMessage(id, {
+            text: `😈 *PERIMETER UPDATE*\n\n@${participant.split('@')[0]}\n${quote}`,
             mentions: [participant]
         });
     }
