@@ -6,12 +6,12 @@ const yts = require('yt-search');
 module.exports = {
     name: 'yta',
     category: 'audio',
-    description: 'YouTube Audio extractor (primary)',
+    description: 'YouTube Audio extractor',
     async execute(sock, msg, args) {
         const from = msg.key.remoteJid;
         const query = args.join(' ');
         if (!query) {
-            return sock.sendMessage(from, { text: '🎵 Usage: .yta <song name or YouTube URL>' }, { quoted: msg });
+            return sock.sendMessage(from, { text: '❌ Usage: .yta <song name or YouTube URL>' }, { quoted: msg });
         }
 
         await sock.sendMessage(from, { text: '🔍 Searching for audio...' }, { quoted: msg });
@@ -40,13 +40,12 @@ module.exports = {
 
             await sock.sendMessage(from, {
                 image: { url: thumbnail },
-                caption: `🎵 *YTA EXTRACTOR*\n♡ *Title:* ${title}\n♡ *Duration:* ${duration}\n♡ *Views:* ${views}\n♡ *Author:* ${author}\n♡ *Status:* Extracting...\n\n_⚡ Powered by Savage-Tech_`
+                caption: `🎵 *Audio Extractor*\n♡ Title: ${title}\n♡ Duration: ${duration}\n♡ Views: ${views}\n♡ Author: ${author}\n♡ Status: Extracting...`
             }, { quoted: msg });
 
-            const endpoint = `https://apis.xwolf.space/download/yta?url=${encodeURIComponent(videoUrl)}`;
-            const response = await axios({
-                method: 'get',
-                url: endpoint,
+            const apiKey = 'wxa_f_9ddecf073b';
+            const endpoint = `https://apis.xwolf.space/download/yta?url=${encodeURIComponent(videoUrl)}&key=${apiKey}`;
+            const response = await axios.get(endpoint, {
                 timeout: 30000,
                 headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36' }
             });
@@ -56,9 +55,7 @@ module.exports = {
                 return sock.sendMessage(from, { text: '❌ No audio URL in API response.' }, { quoted: msg });
             }
 
-            const audioRes = await axios({
-                method: 'get',
-                url: audioUrl,
+            const audioRes = await axios.get(audioUrl, {
                 responseType: 'arraybuffer',
                 timeout: 90000,
                 headers: { 'User-Agent': 'Mozilla/5.0' }
