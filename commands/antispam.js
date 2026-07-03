@@ -1,3 +1,5 @@
+const settings = require('../settings.js');
+
 module.exports = {
     name: 'antispam',
     category: 'group',
@@ -27,18 +29,20 @@ module.exports = {
 
         const sub = args[0]?.toLowerCase();
         const param = args[1]?.toLowerCase();
-        const value = args[2]?.toLowerCase();
 
         if (sub === 'on') {
             global.antiSpamConfig[from].enabled = true;
+            settings.setGroup(from, 'antiSpamConfig', global.antiSpamConfig[from]);
             await sock.sendMessage(from, { text: '🛡️ Anti‑spam protection ENABLED.' }, { quoted: msg });
         } else if (sub === 'off') {
             global.antiSpamConfig[from].enabled = false;
+            settings.setGroup(from, 'antiSpamConfig', global.antiSpamConfig[from]);
             await sock.sendMessage(from, { text: '🛡️ Anti‑spam protection DISABLED.' }, { quoted: msg });
         } else if (sub === 'set' && param) {
             const validActions = ['delete', 'warn', 'kick', 'warn+kick'];
             if (validActions.includes(param)) {
                 global.antiSpamConfig[from].action = param;
+                settings.setGroup(from, 'antiSpamConfig', global.antiSpamConfig[from]);
                 await sock.sendMessage(from, { text: `✅ Action set to: ${param.toUpperCase()}` }, { quoted: msg });
             } else {
                 await sock.sendMessage(from, { text: '❌ Action must be: delete, warn, kick, or warn+kick' }, { quoted: msg });
@@ -47,6 +51,7 @@ module.exports = {
             const limit = parseInt(param);
             if (!isNaN(limit) && limit >= 1 && limit <= 10) {
                 global.antiSpamConfig[from].warnLimit = limit;
+                settings.setGroup(from, 'antiSpamConfig', global.antiSpamConfig[from]);
                 await sock.sendMessage(from, { text: `✅ Warning limit set to ${limit} before kick (for warn/warn+kick actions).` }, { quoted: msg });
             } else {
                 await sock.sendMessage(from, { text: '❌ Limit must be a number between 1 and 10.' }, { quoted: msg });
@@ -55,6 +60,7 @@ module.exports = {
             const seconds = parseInt(param);
             if (!isNaN(seconds) && seconds >= 1 && seconds <= 60) {
                 global.antiSpamConfig[from].timeWindow = seconds;
+                settings.setGroup(from, 'antiSpamConfig', global.antiSpamConfig[from]);
                 await sock.sendMessage(from, { text: `✅ Rate‑limit window set to ${seconds} seconds.` }, { quoted: msg });
             } else {
                 await sock.sendMessage(from, { text: '❌ Window must be 1–60 seconds.' }, { quoted: msg });
@@ -63,6 +69,7 @@ module.exports = {
             const max = parseInt(param);
             if (!isNaN(max) && max >= 1 && max <= 20) {
                 global.antiSpamConfig[from].maxMessages = max;
+                settings.setGroup(from, 'antiSpamConfig', global.antiSpamConfig[from]);
                 await sock.sendMessage(from, { text: `✅ Max messages per window set to ${max}.` }, { quoted: msg });
             } else {
                 await sock.sendMessage(from, { text: '❌ Max must be 1–20.' }, { quoted: msg });
@@ -71,6 +78,7 @@ module.exports = {
             const seconds = parseInt(param);
             if (!isNaN(seconds) && seconds >= 1 && seconds <= 10) {
                 global.antiSpamConfig[from].duplicateWindow = seconds;
+                settings.setGroup(from, 'antiSpamConfig', global.antiSpamConfig[from]);
                 await sock.sendMessage(from, { text: `✅ Duplicate message window set to ${seconds} seconds.` }, { quoted: msg });
             } else {
                 await sock.sendMessage(from, { text: '❌ Duplicate window must be 1–10 seconds.' }, { quoted: msg });
