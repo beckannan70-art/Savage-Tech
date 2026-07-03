@@ -30,18 +30,15 @@ const shayari = [
   "Jis taraf dekho, woh hi nazar aate hain. Shayad hum unhe dhund rahe hain, ya woh humein bula rahe hain.",
   "Dard ki shayari kya likhun, tere bin toh har lafz adhura hai."
 ];
+
 module.exports = {
   name: 'shayari',
   category: 'fun',
   description: 'Hindi/Urdu romantic poetry',
   async execute(sock, msg, args) {
     const random = shayari[Math.floor(Math.random() * shayari.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `📜 *Shayari for @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `📜 *Shayari*\n\n${random}`
+    }, { quoted: msg });
   }
 };
