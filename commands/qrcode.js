@@ -5,19 +5,18 @@ module.exports = {
   category: 'tools',
   description: 'Generate QR code from text (local, no API)',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     const text = args.join(' ');
-    if (!text) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .qrcode <text or URL>' });
-    const sender = msg.pushName || 'User';
-    const jid = msg.key.participant || msg.key.remoteJid;
+    if (!text) return sock.sendMessage(from, { text: '❓ Usage: .qrcode <text or URL>' }, { quoted: msg });
+
     try {
       const buffer = await QRCode.toBuffer(text, { errorCorrectionLevel: 'H', margin: 1 });
-      await sock.sendMessage(msg.key.remoteJid, {
+      await sock.sendMessage(from, {
         image: buffer,
-        caption: `📱 *QR Code for @${sender}*\n\nContent: ${text.slice(0, 100)}\n\n🚀 POWERED BY SAVAGE-CORE`,
-        mentions: [jid]
-      });
+        caption: `📱 *QR Code*\n\nContent: ${text.slice(0, 100)}`
+      }, { quoted: msg });
     } catch (err) {
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Error: ${err.message}` });
+      await sock.sendMessage(from, { text: `❌ Error: ${err.message}` }, { quoted: msg });
     }
   }
 };
