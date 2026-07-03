@@ -1,3 +1,5 @@
+const settings = require('../settings.js');
+
 module.exports = {
     name: 'alwaystyping',
     category: 'owner',
@@ -10,21 +12,20 @@ module.exports = {
 
         if (input === 'on' || (input === null && global.autoTyping !== 'on')) {
             global.autoTyping = 'on';
-            await sock.sendMessage(from, { 
-                text: "⌨️ *GHOST ENGINE:* ONLINE\n\n_Signal broadcast active._" 
-            });
+            settings.setGlobal('autoTyping', 'on');
+            await sock.sendMessage(from, {
+                text: "⌨️ GHOST ENGINE: ONLINE\n\n_Signal broadcast active._"
+            }, { quoted: msg });
         } else {
             global.autoTyping = 'off';
-            
-            // --- THE CRITICAL FIX ---
-            // 1. Force the 'available' status to kill the typing bubble immediately
+            settings.setGlobal('autoTyping', 'off');
+
             await sock.sendPresenceUpdate('available', from);
-            // 2. Also send it to your own ID to clear the global server cache
             await sock.sendPresenceUpdate('available', sock.user.id);
-            
-            await sock.sendMessage(from, { 
-                text: "⌨️ *GHOST ENGINE:* OFFLINE\n\n_Signal terminated. Presence reset to idle._" 
-            });
+
+            await sock.sendMessage(from, {
+                text: "⌨️ GHOST ENGINE: OFFLINE\n\n_Signal terminated. Presence reset to idle._"
+            }, { quoted: msg });
         }
     }
 };
