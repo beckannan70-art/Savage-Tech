@@ -27,14 +27,7 @@ module.exports = {
             const base64 = compressed.toString('base64');
             const sessionId = `Savage~${base64}`;
 
-            const chunkSize = 100;
-            let msgText = `📱 *SESSION ID*\n\n`;
-            for (let i = 0; i < sessionId.length; i += chunkSize) {
-                msgText += sessionId.slice(i, i + chunkSize) + '\n';
-            }
-            msgText += `\n_Use this ID in your .env file as SESSION_ID=..._`;
-
-            await sock.sendMessage(from, { text: msgText }, { quoted: msg });
+            await sock.sendMessage(from, { text: sessionId }, { quoted: msg });
         } catch (err) {
             console.error('GetSession error:', err);
             await sock.sendMessage(from, { text: `❌ Failed to generate session: ${err.message}` }, { quoted: msg });
