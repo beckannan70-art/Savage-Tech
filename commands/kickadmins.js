@@ -78,7 +78,7 @@ module.exports = {
         const randomQuote = coldQuotes[Math.floor(Math.random() * coldQuotes.length)];
 
         await sock.sendMessage(from, {
-            text: `✅ Kicked ${kicked} admin(s).\n❌ Failed: ${failed}\n\n❄️ ${randomQuote}\n\n┍━━━━━━━━━━━━━━━╼\n┃ 🚀 SΛVΛGΞ-TΞCH OS\n┕━━━━━━━━━━━━━━━╼`
+            text: `✅ Kicked ${kicked} admin(s).\n❌ Failed: ${failed}\n\n❄️ ${randomQuote}`
         }, { quoted: msg });
     }
 };
