@@ -30,18 +30,15 @@ const gratitude = [
   "Thanks for the laughs, the tears, and everything in between.",
   "Gratitude unlocks the fullness of life. Thank you for being part of mine."
 ];
+
 module.exports = {
   name: 'gratitude',
   category: 'fun',
   description: 'Gratitude messages',
   async execute(sock, msg, args) {
     const random = gratitude[Math.floor(Math.random() * gratitude.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `🙏 *Gratitude for @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `🙏 *Gratitude*\n\n${random}`
+    }, { quoted: msg });
   }
 };
