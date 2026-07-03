@@ -21,21 +21,21 @@ module.exports = {
   category: 'sports',
   description: 'Get sports data (seasons)',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     const query = args.join(' ');
-    if (!query) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .seasons <query>' });
-    const sender = msg.pushName || 'User';
-    const jid = msg.key.participant || msg.key.remoteJid;
+    if (!query) {
+      return await sock.sendMessage(from, { text: '❓ Usage: .seasons <query>' }, { quoted: msg });
+    }
+
     try {
-      await sock.sendMessage(msg.key.remoteJid, { text: `🏆 Fetching seasons...`, mentions: [jid] });
+      await sock.sendMessage(from, { text: `🏆 Fetching seasons...` }, { quoted: msg });
       const apiUrl = `https://apis.xwolf.space/api/sports/league/seasons?q=${encodeURIComponent(query)}`;
       const res = await axios.get(apiUrl, { httpsAgent: agent });
       const result = formatResult(res.data);
-      const output = `🏅 *Sports: seasons*\n👤 REQUESTED BY: @${sender}\n🔍 Query: ${query}\n\n${result}\n\n┍━━━━━━━━━━━━━━━╼
-┃ 🚀 SΛVΛGΞ-TΞCH OS
-┕━━━━━━━━━━━━━━━╼`;
-      await sock.sendMessage(msg.key.remoteJid, { text: output.slice(0, 2000), mentions: [jid] });
+      const output = `🏅 *Sports: seasons*\n🔍 Query: ${query}\n\n${result}`;
+      await sock.sendMessage(from, { text: output.slice(0, 2000) }, { quoted: msg });
     } catch (err) {
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Error: ${err.message}` });
+      await sock.sendMessage(from, { text: `❌ Error: ${err.message}` }, { quoted: msg });
     }
   }
 };
