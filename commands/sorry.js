@@ -30,18 +30,15 @@ const sorry = [
   "I'm sorry for breaking your heart. If I could take it back, I would.",
   "I'm sorry for everything. Please let me make it up to you."
 ];
+
 module.exports = {
   name: 'sorry',
   category: 'fun',
   description: 'Apology message',
   async execute(sock, msg, args) {
     const random = sorry[Math.floor(Math.random() * sorry.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `🙏 *Apology for @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `🙏 *Apology*\n\n${random}`
+    }, { quoted: msg });
   }
 };
