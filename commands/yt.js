@@ -1,88 +1,64 @@
 const axios = require('axios');
 const https = require('https');
-const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
-async function downloadFile(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, { agent: httpsAgent }, (res) => {
-      if (res.statusCode === 302 || res.statusCode === 301) {
-        downloadFile(res.headers.location).then(resolve).catch(reject);
-        return;
-      }
-      const chunks = [];
-      res.on('data', chunk => chunks.push(chunk));
-      res.on('end', () => resolve(Buffer.concat(chunks)));
-      res.on('error', reject);
-    }).on('error', reject);
-  });
-}
+const agent = new https.Agent({ rejectUnauthorized: false });
 
 module.exports = {
-  name: 'yt',
-  category: 'download',
-  description: 'Download from yt',
-  async execute(sock, msg, args) {
-    const url = args[0];
-    if (!url) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .yt <URL>' });
-    if (!url.startsWith('http')) return sock.sendMessage(msg.key.remoteJid, { text: '❌ Provide a valid URL starting with http:// or https://' });
+    name: 'yt',
+    category: 'download',
+    description: 'Download YouTube video (ravenn.site)',
+    async execute(sock, msg, args) {
+        const from = msg.key.remoteJid;
+        let url = args[0];
 
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
+        if (!url && msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+            const quoted = msg.message.extendedTextMessage.contextInfo.quotedMessage;
+            if (quoted.conversation) {
+                const match = quoted.conversation.match(/(https?:\/\/[^\s]+)/);
+                if (match) url = match[0];
+            } else if (quoted.extendedTextMessage?.text) {
+                const match = quoted.extendedTextMessage.text.match(/(https?:\/\/[^\s]+)/);
+                if (match) url = match[0];
+            }
+        }
 
-    try {
-      const apiUrl = `https://apis.xwolf.space/download/youtube?url=${encodeURIComponent(url)}`;
-      const response = await axios.get(apiUrl, { httpsAgent });
-      const data = response.data;
+        if (!url) {
+            return sock.sendMessage(from, {
+                text: '❌ Provide a YouTube URL, or reply to a message with one.\nExample: `.yt https://youtu.be/xxx`'
+            }, { quoted: msg });
+        }
 
-      if (!data.success) throw new Error(data.error || 'Download failed');
+        if (!url.startsWith('http')) {
+            return sock.sendMessage(from, { text: '❌ Invalid URL.' }, { quoted: msg });
+        }
 
-      // Determine content type based on command name
-      const isVideo = 'yt'.includes('video') || 'yt'.includes('mp4') || 'yt' === 'tiktok' || 'yt' === 'instagram' || 'yt' === 'facebook' || 'yt' === 'twitter' || 'yt' === 'snapchat';
-      const isAudio = 'yt'.includes('mp3') || 'yt'.includes('audio');
-      const isText = 'media' === 'text';
+        try {
+            await sock.sendMessage(from, { text: '⬇️ Downloading YouTube video...' }, { quoted: msg });
 
-      if (isText) {
-        // Send as text (info or search results)
-        let text = `📁 *Download Info (yt)*\n👤 REQUESTED BY: @${senderName}\n🚀 POWERED BY SAVAGE-CORE\n\n`;
-        if (data.result) text += data.result;
-        else if (data.info) text += JSON.stringify(data.info, null, 2);
-        else text += JSON.stringify(data, null, 2);
-        await sock.sendMessage(msg.key.remoteJid, { text: text.slice(0, 2000), mentions: mention });
-        return;
-      }
+            const ravennUrl = `https://ravenn.site/download/ytv4?url=${encodeURIComponent(url)}`;
+            const response = await axios.get(ravennUrl, { httpsAgent: agent, timeout: 15000 });
+            const data = response.data;
 
-      // For media: find download URL
-      let downloadUrl = null;
-      if (data.downloadUrl) downloadUrl = data.downloadUrl;
-      else if (data.result && typeof data.result === 'string') downloadUrl = data.result;
-      else if (data.url) downloadUrl = data.url;
-      else if (data.media && data.media.url) downloadUrl = data.media.url;
-      else if (data.video && data.video.url) downloadUrl = data.video.url;
-      else if (data.audio && data.audio.url) downloadUrl = data.audio.url;
-      else if (Array.isArray(data.result) && data.result.length > 0) {
-        // Pick highest quality or first
-        const best = data.result.find(r => r.quality === 'HD') || data.result[0];
-        downloadUrl = best.url || best.downloadUrl;
-      }
-      if (!downloadUrl) throw new Error('No download link found in API response');
+            if (!data.status || !data.result) {
+                throw new Error('Invalid response: ' + JSON.stringify(data));
+            }
 
-      const fileBuffer = await downloadFile(downloadUrl);
-      const maxSize = isVideo ? 64 * 1024 * 1024 : 16 * 1024 * 1024; // video 64MB, audio 16MB
-      if (fileBuffer.length > maxSize) {
-        await sock.sendMessage(msg.key.remoteJid, { text: `⚠️ File too large (${(fileBuffer.length/1024/1024).toFixed(1)}MB). Direct link: ${downloadUrl}` });
-        return;
-      }
+            const downloadUrl = data.result;
+            const videoRes = await axios.get(downloadUrl, {
+                responseType: 'arraybuffer',
+                httpsAgent: agent,
+                timeout: 60000
+            });
+            const videoBuffer = Buffer.from(videoRes.data);
 
-      const caption = `📥 *Download: yt*\n👤 REQUESTED BY: @${senderName}\n🚀 POWERED BY SAVAGE-CORE`;
-      if (isVideo) {
-        await sock.sendMessage(msg.key.remoteJid, { video: fileBuffer, caption: caption, mentions: mention });
-      } else {
-        await sock.sendMessage(msg.key.remoteJid, { audio: fileBuffer, mimetype: 'audio/mpeg', fileName: 'download.mp3', caption: caption, mentions: mention });
-      }
-    } catch (err) {
-      console.error('yt error:', err);
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Download failed.\n${err.message}` });
+            await sock.sendMessage(from, {
+                video: videoBuffer,
+                caption: '✅ YouTube video downloaded.'
+            }, { quoted: msg });
+
+        } catch (err) {
+            console.error('YouTube error:', err);
+            await sock.sendMessage(from, { text: `❌ Failed: ${err.message}` }, { quoted: msg });
+        }
     }
-  }
 };
