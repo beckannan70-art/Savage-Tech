@@ -1,17 +1,33 @@
 const axios = require('axios');
 
 module.exports = {
-  name: 'vicuna',
-  category: 'ai',
-  description: 'Chat with Vicuna chatbot',
-  async execute(sock, msg, args) {
-    const query = args.join(' ');
-    if (!query) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Ask Vicuna?' });
-    try {
-      const url = `https://apis.xwolf.space/api/ai/vicuna?q=${encodeURIComponent(query)}`;
-      const res = await axios.get(url);
-      const reply = res.data.status ? (res.data.result || 'No response') : `⚠️ ${res.data.error}`;
-      await sock.sendMessage(msg.key.remoteJid, { text: `🤖 *Vicuna:*\n${reply.slice(0, 2000)}` });
-    } catch { await sock.sendMessage(msg.key.remoteJid, { text: '❌ API error' }); }
-  }
+    name: 'vicuna',
+    category: 'ai',
+    description: 'Chat with Vicuna AI',
+    async execute(sock, msg, args) {
+        const from = msg.key.remoteJid;
+        const query = args.join(' ');
+        if (!query) {
+            return sock.sendMessage(from, { text: '❌ Usage: .vicuna <message>' }, { quoted: msg });
+        }
+
+        try {
+            const apiKey = 'wxa_f_9ddecf073b';
+            const url = `https://apis.xwolf.space/api/ai/vicuna?q=${encodeURIComponent(query)}&key=${apiKey}`;
+            const response = await axios.get(url, { timeout: 30000 });
+            const data = response.data;
+
+            let reply = 'No response';
+            if (data.status && data.result) {
+                reply = data.result;
+            } else if (data.error) {
+                reply = `⚠️ ${data.error}`;
+            }
+
+            await sock.sendMessage(from, { text: `🤖 *Vicuna:*\n${reply.slice(0, 2000)}` }, { quoted: msg });
+        } catch (err) {
+            console.error('Vicuna error:', err);
+            await sock.sendMessage(from, { text: '❌ API error. Please try again later.' }, { quoted: msg });
+        }
+    }
 };
