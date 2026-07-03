@@ -30,18 +30,15 @@ const mothers = [
   "I hope you feel as special as you truly are. Love you, Mom!",
   "Thank you for being my light in dark times. Happy Mother's Day!"
 ];
+
 module.exports = {
   name: 'mothersday',
   category: 'fun',
   description: 'Mother’s Day wishes',
   async execute(sock, msg, args) {
     const random = mothers[Math.floor(Math.random() * mothers.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `👩 *Happy Mother's Day, @${senderName}!*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `👩 *Happy Mother's Day!*\n\n${random}`
+    }, { quoted: msg });
   }
 };
