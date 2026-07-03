@@ -24,7 +24,7 @@ module.exports = {
                 `${idx + 1}. @${user.jid.split('@')[0]} — ${user.count} msgs`
             ).join('\n');
 
-            const text = `📊 *Activity Ranking in ${meta.subject}*\n👥 Active: ${active.length}\n\n${lines}\n\n┍━━━━━━━━━━━━━━━╼\n┃ 🚀 SΛVΛGΞ-TΞCH OS\n┕━━━━━━━━━━━━━━━╼`;
+            const text = `📊 *Activity Ranking in ${meta.subject}*\n👥 Active: ${active.length}\n\n${lines}`;
 
             await sock.sendMessage(from, { text, mentions: active.map(u => u.jid) }, { quoted: msg });
         } catch (err) {
