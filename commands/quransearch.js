@@ -7,13 +7,13 @@ module.exports = {
   async execute(sock, msg, args) {
     const from = msg.key.remoteJid;
     const keyword = args.join(' ');
-    if (!keyword) return sock.sendMessage(from, { text: '❌ Usage: .quransearch <keyword>' }, { quoted: msg });
+    if (!keyword) return await sock.sendMessage(from, { text: '❌ Usage: .quransearch <keyword>' }, { quoted: msg });
 
     try {
       const res = await axios.get(`https://apis.xwolf.space/api/quran/search?q=${encodeURIComponent(keyword)}`);
       const data = res.data;
       if (!data.success || !data.results || data.results.length === 0) {
-        return sock.sendMessage(from, { text: `❌ No results found for "${keyword}".` }, { quoted: msg });
+        return await sock.sendMessage(from, { text: `❌ No results found for "${keyword}".` }, { quoted: msg });
       }
 
       const results = data.results.slice(0, 5);
