@@ -33,7 +33,7 @@ module.exports = {
                 code = await sock.groupInviteCode(from);
             }
             const link = `https://chat.whatsapp.com/${code}`;
-            await sock.sendMessage(from, { text: `🔗 *Group Invite Link*\n${link}\n\n_⚡ Powered by Savage-Tech_` }, { quoted: msg });
+            await sock.sendMessage(from, { text: `🔗 *Group Invite Link*\n${link}` }, { quoted: msg });
         } catch (err) {
             console.error('Invite error:', err);
             let errorMsg = '❌ Failed to get invite link. Make sure I am an admin in this group.';
