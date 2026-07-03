@@ -1,4 +1,3 @@
-// code.js – AI code generation assistant
 const axios = require('axios');
 
 module.exports = {
@@ -6,20 +5,20 @@ module.exports = {
   category: 'tools',
   description: 'Generate code from description',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     const prompt = args.join(' ');
-    if (!prompt) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Describe the code you need.' });
+    if (!prompt) return sock.sendMessage(from, { text: '❓ Describe the code you need.' }, { quoted: msg });
 
     try {
       const response = await axios.post('https://apis.xwolf.space/api/ai/code', { prompt });
       if (response.data.status === true) {
         let code = response.data.result || response.data.code || 'No code generated.';
-        // Trim and send as text (WhatsApp may format code poorly, but it's fine)
-        await sock.sendMessage(msg.key.remoteJid, { text: `💻 *Generated Code:*\n\`\`\`\n${code.slice(0, 1900)}\n\`\`\`` });
+        await sock.sendMessage(from, { text: `💻 *Generated Code:*\n\`\`\`\n${code.slice(0, 1900)}\n\`\`\`` }, { quoted: msg });
       } else {
-        await sock.sendMessage(msg.key.remoteJid, { text: `⚠️ ${response.data.error || 'Code generation failed.'}` });
+        await sock.sendMessage(from, { text: `⚠️ ${response.data.error || 'Code generation failed.'}` }, { quoted: msg });
       }
     } catch (error) {
-      await sock.sendMessage(msg.key.remoteJid, { text: '❌ Code AI error.' });
+      await sock.sendMessage(from, { text: '❌ Code AI error.' }, { quoted: msg });
     }
   }
 };
