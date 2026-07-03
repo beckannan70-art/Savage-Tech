@@ -11,7 +11,7 @@ module.exports = {
         const from = msg.key.remoteJid;
         const query = args.join(' ');
         if (!query) {
-            return sock.sendMessage(from, { text: '🎵 Usage: .ytmp3 <song name or YouTube URL>' }, { quoted: msg });
+            return sock.sendMessage(from, { text: '❌ Usage: .ytmp3 <song name or YouTube URL>' }, { quoted: msg });
         }
 
         await sock.sendMessage(from, { text: '🔍 Searching for audio...' }, { quoted: msg });
@@ -40,15 +40,13 @@ module.exports = {
 
             await sock.sendMessage(from, {
                 image: { url: thumbnail },
-                caption: `🎵 *YTMP3 CONVERTER*\n♡ *Title:* ${title}\n♡ *Duration:* ${duration}\n♡ *Views:* ${views}\n♡ *Author:* ${author}\n♡ *Status:* Converting...\n\n_⚡ Powered by Savage-Tech_`
+                caption: `🎵 *MP3 Converter*\n♡ Title: ${title}\n♡ Duration: ${duration}\n♡ Views: ${views}\n♡ Author: ${author}\n♡ Status: Converting...`
             }, { quoted: msg });
 
-            // Use the same xwolf.space endpoint that works in .play and .song
-            const endpoint = `https://apis.xwolf.space/download/yta2?url=${encodeURIComponent(videoUrl)}`;
-            const response = await axios({
-                method: 'get',
-                url: endpoint,
-                timeout: 30000, // increased timeout
+            const apiKey = 'wxa_f_9ddecf073b';
+            const endpoint = `https://apis.xwolf.space/download/yta2?url=${encodeURIComponent(videoUrl)}&key=${apiKey}`;
+            const response = await axios.get(endpoint, {
+                timeout: 30000,
                 headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36' }
             });
 
@@ -57,9 +55,7 @@ module.exports = {
                 return sock.sendMessage(from, { text: '❌ No audio URL in API response.' }, { quoted: msg });
             }
 
-            const audioRes = await axios({
-                method: 'get',
-                url: audioUrl,
+            const audioRes = await axios.get(audioUrl, {
                 responseType: 'arraybuffer',
                 timeout: 90000,
                 headers: { 'User-Agent': 'Mozilla/5.0' }
