@@ -1,7 +1,7 @@
 const settings = require('../settings.js');
 
 module.exports = {
-    name: "antitagadmin",
+    name: "antitag",
     category: "group",
     async execute(sock, msg, args) {
         const from = msg.key.remoteJid;
@@ -20,27 +20,27 @@ module.exports = {
         } catch (e) {}
         if (!isAdmin) return await sock.sendMessage(from, { text: '❎ You are not worthy of this command.' }, { quoted: msg });
 
-        if (!global.antiTagAdminConfig) global.antiTagAdminConfig = {};
-        if (!global.antiTagAdminWarnings) global.antiTagAdminWarnings = {};
-        if (global.antiTagAdminConfig[from] === undefined) {
-            global.antiTagAdminConfig[from] = { enabled: false, action: "delete", warnLimit: 3 };
+        if (!global.antiTagConfig) global.antiTagConfig = {};
+        if (!global.antiTagWarnings) global.antiTagWarnings = {};
+        if (global.antiTagConfig[from] === undefined) {
+            global.antiTagConfig[from] = { enabled: false, action: "delete", warnLimit: 3 };
         }
 
         const sub = args[0]?.toLowerCase();
         const param = args[1]?.toLowerCase();
 
         if (sub === "on") {
-            global.antiTagAdminConfig[from].enabled = true;
-            settings.setGroup(from, 'antiTagAdminConfig', global.antiTagAdminConfig[from]);
-            await sock.sendMessage(from, { text: '🛡️ Anti‑tag‑admin protection ENABLED.' }, { quoted: msg });
+            global.antiTagConfig[from].enabled = true;
+            settings.setGroup(from, 'antiTagConfig', global.antiTagConfig[from]);
+            await sock.sendMessage(from, { text: '🛡️ Anti-tag protection ENABLED.' }, { quoted: msg });
         } else if (sub === "off") {
-            global.antiTagAdminConfig[from].enabled = false;
-            settings.setGroup(from, 'antiTagAdminConfig', global.antiTagAdminConfig[from]);
-            await sock.sendMessage(from, { text: '🛡️ Anti‑tag‑admin protection DISABLED.' }, { quoted: msg });
+            global.antiTagConfig[from].enabled = false;
+            settings.setGroup(from, 'antiTagConfig', global.antiTagConfig[from]);
+            await sock.sendMessage(from, { text: '🛡️ Anti-tag protection DISABLED.' }, { quoted: msg });
         } else if (sub === "set") {
             if (param === "delete" || param === "warn" || param === "kick" || param === "warn+kick") {
-                global.antiTagAdminConfig[from].action = param;
-                settings.setGroup(from, 'antiTagAdminConfig', global.antiTagAdminConfig[from]);
+                global.antiTagConfig[from].action = param;
+                settings.setGroup(from, 'antiTagConfig', global.antiTagConfig[from]);
                 await sock.sendMessage(from, { text: `✅ Action set to: ${param.toUpperCase()}` }, { quoted: msg });
             } else {
                 await sock.sendMessage(from, { text: '❌ Action must be: delete, warn, kick, or warn+kick' }, { quoted: msg });
@@ -48,17 +48,17 @@ module.exports = {
         } else if (sub === "limit") {
             const limit = parseInt(param);
             if (!isNaN(limit) && limit > 0 && limit <= 10) {
-                global.antiTagAdminConfig[from].warnLimit = limit;
-                settings.setGroup(from, 'antiTagAdminConfig', global.antiTagAdminConfig[from]);
+                global.antiTagConfig[from].warnLimit = limit;
+                settings.setGroup(from, 'antiTagConfig', global.antiTagConfig[from]);
                 await sock.sendMessage(from, { text: `✅ Warning limit set to ${limit} before kick.` }, { quoted: msg });
             } else {
                 await sock.sendMessage(from, { text: '❌ Limit must be a number between 1 and 10.' }, { quoted: msg });
             }
         } else if (sub === "list") {
-            const cfg = global.antiTagAdminConfig[from];
-            await sock.sendMessage(from, { text: `📋 *Anti‑tag‑admin settings*:\nEnabled: ${cfg.enabled}\nAction: ${cfg.action}\nWarn limit: ${cfg.warnLimit}` }, { quoted: msg });
+            const cfg = global.antiTagConfig[from];
+            await sock.sendMessage(from, { text: `📋 *Anti-tag settings*:\nEnabled: ${cfg.enabled}\nAction: ${cfg.action}\nWarn limit: ${cfg.warnLimit}` }, { quoted: msg });
         } else {
-            await sock.sendMessage(from, { text: `Usage:\n.antitagadmin on/off\n.antitagadmin set (delete|warn|kick|warn+kick)\n.antitagadmin limit <1-10>\n.antitagadmin list` }, { quoted: msg });
+            await sock.sendMessage(from, { text: `Usage:\n.antitag on/off\n.antitag set (delete|warn|kick|warn+kick)\n.antitag limit <1-10>\n.antitag list` }, { quoted: msg });
         }
     }
 };
