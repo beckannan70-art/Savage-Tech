@@ -30,18 +30,15 @@ const friendship = [
   "We'll be friends until we're old and gray – and then we'll be friends in heaven.",
   "You're the best thing that happened to me outside my family."
 ];
+
 module.exports = {
   name: 'friendship',
   category: 'fun',
   description: 'Friendship message',
   async execute(sock, msg, args) {
     const random = friendship[Math.floor(Math.random() * friendship.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `🤝 *Friendship message for @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `🤝 *Friendship message*\n\n${random}`
+    }, { quoted: msg });
   }
 };
