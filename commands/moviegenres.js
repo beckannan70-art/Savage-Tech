@@ -14,13 +14,13 @@ module.exports = {
         for (const g of data.genres) {
           text += `🔹 *${g.name}* – ID: ${g.id}\n`;
         }
-        await sock.sendMessage(from, { text });
+        await sock.sendMessage(from, { text }, { quoted: msg });
       } else {
-        await sock.sendMessage(from, { text: `❌ Failed: ${data.error || 'Unknown error'}` });
+        await sock.sendMessage(from, { text: `❌ Failed: ${data.error || 'Unknown error'}` }, { quoted: msg });
       }
     } catch (err) {
       console.error(err);
-      await sock.sendMessage(from, { text: '❌ Network error or API unavailable.' });
+      await sock.sendMessage(from, { text: '❌ Network error or API unavailable.' }, { quoted: msg });
     }
   }
 };
