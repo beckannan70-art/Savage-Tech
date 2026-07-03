@@ -8,17 +8,19 @@ const lorem = [
   "Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit.",
   "Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur."
 ];
+
 module.exports = {
   name: 'lorem',
   category: 'tools',
   description: 'Generate Lorem Ipsum text',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     let count = parseInt(args[0]) || 1;
     if (count < 1) count = 1;
     if (count > 10) count = 10;
     const text = Array(count).fill().map(() => lorem[Math.floor(Math.random() * lorem.length)]).join(' ');
-    const sender = msg.pushName || 'User';
-    const jid = msg.key.participant || msg.key.remoteJid;
-    await sock.sendMessage(msg.key.remoteJid, { text: `📝 *Lorem Ipsum for @${sender}*\n\n${text}\n\n🚀 POWERED BY SAVAGE-CORE`, mentions: [jid] });
+    await sock.sendMessage(from, {
+      text: `📝 *Lorem Ipsum*\n\n${text}`
+    }, { quoted: msg });
   }
 };
