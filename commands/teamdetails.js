@@ -1,49 +1,63 @@
 const axios = require('axios');
 const https = require('https');
+
 const agent = new https.Agent({ rejectUnauthorized: false });
 
-async function downloadFile(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, { agent }, (res) => {
-      if (res.statusCode === 302 || res.statusCode === 301) {
-        downloadFile(res.headers.location).then(resolve).catch(reject);
-        return;
-      }
-      const chunks = [];
-      res.on('data', chunk => chunks.push(chunk));
-      res.on('end', () => resolve(Buffer.concat(chunks)));
-      res.on('error', reject);
-    }).on('error', reject);
-  });
-}
-
 module.exports = {
-  name: 'teamdetails',
-  category: 'sports',
-  description: 'Get team details (sends badge)',
-  async execute(sock, msg, args) {
-    const query = args.join(' ');
-    if (!query) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .teamdetails <team ID or name>' });
-    const sender = msg.pushName || 'User';
-    const jid = msg.key.participant || msg.key.remoteJid;
-    try {
-      await sock.sendMessage(msg.key.remoteJid, { text: `🔍 Fetching team details for "${query}"...`, mentions: [jid] });
-      const res = await axios.get(`https://apis.xwolf.space/api/sports/team/details?q=${encodeURIComponent(query)}`, { httpsAgent: agent });
-      if (!res.data.success || !res.data.result) throw new Error('No data');
-      const t = res.data.result;
-      let caption = `🏟️ *Team: ${t.name}*\n👤 REQUESTED BY: @${sender}\n\n`;
-      caption += `🏷️ ID: ${t.id}\n⚽ Sport: ${t.sport || 'N/A'}\n🏅 League: ${t.league || 'N/A'}\n🌍 Country: ${t.country || 'N/A'}\n📊 Formed: ${t.formed || 'N/A'}\n🏆 Stadium: ${t.stadium || 'N/A'}\n📝 ${(t.description || '').slice(0, 300)}\n┍━━━━━━━━━━━━━━━╼
-┃ 🚀 SΛVΛGΞ-TΞCH OS
-┕━━━━━━━━━━━━━━━╼`;
-      let imgUrl = t.badge || t.thumbnail;
-      if (imgUrl && imgUrl.startsWith('http')) {
-        const imgBuffer = await downloadFile(imgUrl);
-        await sock.sendMessage(msg.key.remoteJid, { image: imgBuffer, caption: caption, mentions: [jid] });
-      } else {
-        await sock.sendMessage(msg.key.remoteJid, { text: caption, mentions: [jid] });
-      }
-    } catch (err) {
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Team details error: ${err.message}` });
+    name: 'teamdetails',
+    category: 'sports',
+    description: 'Get team details (badge included)',
+    async execute(sock, msg, args) {
+        const from = msg.key.remoteJid;
+        const query = args.join(' ');
+        if (!query) {
+            return sock.sendMessage(from, { text: '❌ Usage: .teamdetails <team name or ID>' }, { quoted: msg });
+        }
+
+        try {
+            await sock.sendMessage(from, { text: `🔍 Fetching team details for "${query}"...` }, { quoted: msg });
+
+            const apiKey = 'wxa_f_9ddecf073b';
+            const apiUrl = `https://apis.xwolf.space/api/sports/team/details?q=${encodeURIComponent(query)}&key=${apiKey}`;
+            const response = await axios.get(apiUrl, { httpsAgent: agent, timeout: 15000 });
+            const data = response.data;
+
+            if (!data.success || !data.result) {
+                throw new Error(data.error || 'No data returned');
+            }
+
+            const t = data.result;
+            let caption = `🏟️ *Team: ${t.name || 'Unknown'}*\n\n`;
+            caption += `🏷️ ID: ${t.id || 'N/A'}\n`;
+            caption += `⚽ Sport: ${t.sport || 'N/A'}\n`;
+            caption += `🏅 League: ${t.league || 'N/A'}\n`;
+            caption += `🌍 Country: ${t.country || 'N/A'}\n`;
+            caption += `📊 Formed: ${t.formed || 'N/A'}\n`;
+            caption += `🏆 Stadium: ${t.stadium || 'N/A'}\n`;
+            if (t.description) {
+                caption += `📝 ${t.description.slice(0, 300)}`;
+            }
+
+            let imgUrl = t.badge || t.thumbnail;
+            if (imgUrl && imgUrl.startsWith('http')) {
+                try {
+                    const imgRes = await axios.get(imgUrl, { responseType: 'arraybuffer', httpsAgent: agent, timeout: 10000 });
+                    const imgBuffer = Buffer.from(imgRes.data);
+                    await sock.sendMessage(from, {
+                        image: imgBuffer,
+                        caption: caption
+                    }, { quoted: msg });
+                } catch (imgErr) {
+                    console.warn('Failed to fetch badge:', imgErr.message);
+                    await sock.sendMessage(from, { text: caption }, { quoted: msg });
+                }
+            } else {
+                await sock.sendMessage(from, { text: caption }, { quoted: msg });
+            }
+
+        } catch (err) {
+            console.error('Team details error:', err);
+            await sock.sendMessage(from, { text: `❌ Failed: ${err.message}` }, { quoted: msg });
+        }
     }
-  }
 };
