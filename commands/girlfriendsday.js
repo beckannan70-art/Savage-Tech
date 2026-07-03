@@ -30,18 +30,15 @@ const gfDay = [
   "I fall for you over and over again. Love you!",
   "You're my home. Happy Girlfriend's Day!"
 ];
+
 module.exports = {
   name: 'girlfriendsday',
   category: 'fun',
   description: 'Girlfriend’s Day wishes',
   async execute(sock, msg, args) {
     const random = gfDay[Math.floor(Math.random() * gfDay.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `💖 *Happy Girlfriend's Day, @${senderName}!*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `💖 *Happy Girlfriend's Day!*\n\n${random}`
+    }, { quoted: msg });
   }
 };
