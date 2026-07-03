@@ -30,18 +30,15 @@ const loveMessages = [
   "I'm the luckiest person to have you.",
   "You are my forever."
 ];
+
 module.exports = {
   name: 'love',
   category: 'fun',
   description: 'Sweet love message',
   async execute(sock, msg, args) {
     const random = loveMessages[Math.floor(Math.random() * loveMessages.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `❤️ *Love message for @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `❤️ *Love message*\n\n${random}`
+    }, { quoted: msg });
   }
 };
