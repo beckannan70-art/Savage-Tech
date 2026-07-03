@@ -61,7 +61,7 @@ module.exports = {
         const userName = target.split('@')[0];
 
         await sock.sendMessage(from, {
-            text: `✅ *User @${userName} is about to be kicked.*\n\n❄️ "${randomQuote}"\n\n┍━━━━━━━━━━━━━━━╼\n┃ 🚀 SΛVΛGΞ-TΞCH OS\n┕━━━━━━━━━━━━━━━╼`,
+            text: `✅ *User @${userName} is about to be kicked.*\n\n❄️ ${randomQuote}`,
             mentions: [target]
         }, { quoted: msg });
 
