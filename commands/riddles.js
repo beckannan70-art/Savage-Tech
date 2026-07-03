@@ -30,21 +30,23 @@ const riddles = [
   { q: "What has a foot on each side but no legs?", a: "A pair of shoes." },
   { q: "What has a face that doesn’t frown, and hands that don’t wave?", a: "A clock." }
 ];
+
 module.exports = {
   name: 'riddles',
   category: 'fun',
   description: 'Random riddle (answer hidden)',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     const random = riddles[Math.floor(Math.random() * riddles.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `🧩 *Riddle for @${senderName}*\n\n${random.q}\n\n(Answer will be sent in 10 seconds...)\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+
+    await sock.sendMessage(from, {
+      text: `🧩 *Riddle*\n\n${random.q}\n\n(Answer will be sent in 10 seconds...)`
+    }, { quoted: msg });
+
     setTimeout(async () => {
-      await sock.sendMessage(msg.key.remoteJid, { text: `🔓 *Answer:* ${random.a}` });
+      await sock.sendMessage(from, {
+        text: `🔓 *Answer:* ${random.a}`
+      }, { quoted: msg });
     }, 10000);
   }
 };
