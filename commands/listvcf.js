@@ -89,8 +89,6 @@ module.exports = {
                 count++;
             }
 
-            text += `⚡ Powered by Savage Tech`;
-
             if (text.length > 65000) {
 
                 const chunks = [];
