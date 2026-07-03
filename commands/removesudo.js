@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 module.exports = {
     name: "removesudo",
     category: "owner",
@@ -39,6 +42,14 @@ module.exports = {
         }
 
         global.sudoUsers = global.sudoUsers.filter(id => id !== target);
+        
+        try {
+            const sudoPath = path.join(__dirname, '..', 'sudo.json');
+            fs.writeFileSync(sudoPath, JSON.stringify(global.sudoUsers, null, 2));
+        } catch (err) {
+            console.error('Failed to save sudo.json:', err);
+        }
+
         await sock.sendMessage(from, { text: `✅ Sudo removed from ${target.split('@')[0]}.` }, { quoted: msg });
     }
 };
