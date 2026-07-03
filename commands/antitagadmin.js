@@ -1,3 +1,5 @@
+const settings = require('../settings.js');
+
 module.exports = {
     name: "antitagadmin",
     category: "group",
@@ -29,13 +31,16 @@ module.exports = {
 
         if (sub === "on") {
             global.antiTagAdminConfig[from].enabled = true;
+            settings.setGroup(from, 'antiTagAdminConfig', global.antiTagAdminConfig[from]);
             await sock.sendMessage(from, { text: '🛡️ Anti‑tag‑admin protection ENABLED.' }, { quoted: msg });
         } else if (sub === "off") {
             global.antiTagAdminConfig[from].enabled = false;
+            settings.setGroup(from, 'antiTagAdminConfig', global.antiTagAdminConfig[from]);
             await sock.sendMessage(from, { text: '🛡️ Anti‑tag‑admin protection DISABLED.' }, { quoted: msg });
         } else if (sub === "set") {
             if (param === "delete" || param === "warn" || param === "kick" || param === "warn+kick") {
                 global.antiTagAdminConfig[from].action = param;
+                settings.setGroup(from, 'antiTagAdminConfig', global.antiTagAdminConfig[from]);
                 await sock.sendMessage(from, { text: `✅ Action set to: ${param.toUpperCase()}` }, { quoted: msg });
             } else {
                 await sock.sendMessage(from, { text: '❌ Action must be: delete, warn, kick, or warn+kick' }, { quoted: msg });
@@ -44,6 +49,7 @@ module.exports = {
             const limit = parseInt(param);
             if (!isNaN(limit) && limit > 0 && limit <= 10) {
                 global.antiTagAdminConfig[from].warnLimit = limit;
+                settings.setGroup(from, 'antiTagAdminConfig', global.antiTagAdminConfig[from]);
                 await sock.sendMessage(from, { text: `✅ Warning limit set to ${limit} before kick.` }, { quoted: msg });
             } else {
                 await sock.sendMessage(from, { text: '❌ Limit must be a number between 1 and 10.' }, { quoted: msg });
