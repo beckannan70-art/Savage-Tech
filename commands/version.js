@@ -5,15 +5,13 @@ const path = require('path');
 module.exports = {
     name: 'version',
     category: 'engine',
-    description: 'Show bot version based on commit count',
+    description: 'Show bot version and commit info',
     async execute(sock, msg, args) {
         const from = msg.key.remoteJid;
-        const senderJid = msg.key.participant || msg.key.remoteJid;
-        const senderName = msg.pushName || 'User';
 
         let commitCount = 0;
         let commitHash = 'unknown';
-        let version = '1.0.0';
+        let version = '1.4.0';
 
         try {
             commitCount = parseInt(execSync('git rev-list --count HEAD', { encoding: 'utf8' }).trim());
@@ -26,12 +24,17 @@ module.exports = {
                 const pkgPath = path.join(__dirname, '..', 'package.json');
                 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
                 version = pkg.version;
-            } catch (err) {}
+            } catch (err) {
+                version = '1.0.0';
+            }
         }
 
-        const mention = senderJid;
-        const text = `📦 *BOT VERSION*\n\n👤 *Requested by:* @${senderJid.split('@')[0]}\n🔖 *Version:* ${version}\n🔢 *Total Updates:* ${commitCount}\n🔀 *Commit:* ${commitHash}\n\n_⚡ Savage-Tech OS_`;
+        const text =
+            `📦 *Version Info*\n\n` +
+            `🔖 Version       : ${version}\n` +
+            `🔢 Total Commits : ${commitCount}\n` +
+            `🔀 Latest Commit : ${commitHash}`;
 
-        await sock.sendMessage(from, { text, mentions: [mention] }, { quoted: msg });
+        await sock.sendMessage(from, { text: text }, { quoted: msg });
     }
 };
