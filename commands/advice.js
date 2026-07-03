@@ -30,18 +30,15 @@ const adviceList = [
   "It's okay to outgrow people and places.",
   "Your only limit is the one you set for yourself."
 ];
+
 module.exports = {
   name: 'advice',
   category: 'fun',
   description: 'Random life advice',
   async execute(sock, msg, args) {
     const random = adviceList[Math.floor(Math.random() * adviceList.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
     await sock.sendMessage(msg.key.remoteJid, { 
-      text: `💡 *Advice for @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+      text: `💡 *Advice*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`
+    }, { quoted: msg });
   }
 };
