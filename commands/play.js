@@ -4,7 +4,7 @@ const yts = require('yt-search');
 module.exports = {
     name: 'play',
     category: 'audio',
-    description: 'Download a song (YouTube URL or song name)',
+    description: 'Download a song (Ravenn primary, Wolf fallback, Deezer last)',
     async execute(sock, msg, args) {
         const from = msg.key.remoteJid;
         const query = args.join(' ');
@@ -21,13 +21,20 @@ module.exports = {
             let videoUrl = null;
             let usedFallback = false;
 
-            // Check if query is already a YouTube URL
             const isUrl = query.match(/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/);
 
             if (isUrl) {
                 videoUrl = query;
+                try {
+                    const info = await yts({ videoId: videoUrl });
+                    if (info) {
+                        title = info.title || 'Unknown';
+                        artist = info.author?.name || 'Unknown';
+                        duration = info.duration?.timestamp || 'N/A';
+                        cover = info.thumbnail || null;
+                    }
+                } catch (e) {}
             } else {
-                // Search YouTube for the song
                 try {
                     const searchResult = await yts(query);
                     const video = searchResult.videos[0];
@@ -45,13 +52,11 @@ module.exports = {
                 }
             }
 
-            // If we have a YouTube URL, try Ravenn
             if (videoUrl) {
                 try {
-                    const response = await axios.get(`https://ravenn.site/download/audio?url=${encodeURIComponent(videoUrl)}`);
+                    const response = await axios.get(`https://ravenn.site/download/audio?url=${encodeURIComponent(videoUrl)}`, { timeout: 15000 });
                     if (response.data.status && response.data.result) {
                         audioUrl = response.data.result;
-                        // If title/artist weren't set from search, set defaults
                         if (title === 'Unknown') title = 'YouTube Audio';
                     }
                 } catch (ravErr) {
@@ -59,9 +64,22 @@ module.exports = {
                 }
             }
 
-            // If Ravenn failed or no videoUrl, fallback to Deezer preview
+            if (!audioUrl && videoUrl) {
+                try {
+                    const apiKey = 'wxa_f_28d599362e';
+                    const wolfUrl = `https://apis.xwolf.space/download/mp3?url=${encodeURIComponent(videoUrl)}&q=${encodeURIComponent(query)}&key=${apiKey}`;
+                    const wolfRes = await axios.get(wolfUrl, { timeout: 15000 });
+                    if (wolfRes.data.success) {
+                        audioUrl = wolfRes.data.result?.downloadUrl || wolfRes.data.downloadUrl || wolfRes.data.result?.url || wolfRes.data.url;
+                        if (audioUrl && title === 'Unknown') title = 'YouTube Audio';
+                    }
+                } catch (wolfErr) {
+                    console.log('Wolf API failed:', wolfErr.message);
+                }
+            }
+
             if (!audioUrl) {
-                console.log('Ravenn failed, falling back to Deezer...');
+                console.log('Ravenn & Wolf failed, falling back to Deezer...');
                 usedFallback = true;
                 try {
                     const deezerRes = await axios.get(`https://api.deezer.com/search?q=${encodeURIComponent(query)}`);
@@ -87,7 +105,6 @@ module.exports = {
 
             const caption = `🎵 *${title}*\n👤 *Artist:* ${artist}\n⏱️ *Duration:* ${duration}${usedFallback ? ' (preview)' : ''}`;
 
-            // Download and send cover image
             let imageBuffer = null;
             if (cover) {
                 try {
@@ -102,7 +119,6 @@ module.exports = {
                 await sock.sendMessage(from, { text: caption }, { quoted: msg });
             }
 
-            // Download and send audio
             const audioRes = await axios.get(audioUrl, { responseType: 'arraybuffer', timeout: 30000 });
             const audioBuffer = Buffer.from(audioRes.data);
 
