@@ -7,12 +7,12 @@ module.exports = {
   async execute(sock, msg, args) {
     const from = msg.key.remoteJid;
     const name = args[0]?.toLowerCase();
-    if (!name) return sock.sendMessage(from, { text: '❌ Usage: .pokemon <name> (e.g., .pokemon pikachu)' });
+    if (!name) return await sock.sendMessage(from, { text: '❌ Usage: .pokemon <name> (e.g., .pokemon pikachu)' }, { quoted: msg });
 
     try {
       const res = await axios.get(`https://apis.xwolf.space/api/pokemon/info?name=${encodeURIComponent(name)}`);
       const data = res.data;
-      if (!data.success) return sock.sendMessage(from, { text: `❌ Pokemon "${name}" not found.` });
+      if (!data.success) return await sock.sendMessage(from, { text: `❌ Pokemon "${name}" not found.` }, { quoted: msg });
 
       const types = data.types?.join(', ') || 'N/A';
       const abilities = data.abilities?.map(a => a.name).join(', ') || 'N/A';
@@ -46,7 +46,7 @@ module.exports = {
       }
     } catch (err) {
       console.error(err);
-      await sock.sendMessage(from, { text: '❌ API error.' });
+      await sock.sendMessage(from, { text: '❌ API error.' }, { quoted: msg });
     }
   }
 };
