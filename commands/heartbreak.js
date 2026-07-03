@@ -30,18 +30,15 @@ const heartbreak = [
   "Time heals almost everything. Give time, time.",
   "One day you will look back and realize that the heartbreak was just a gift in disguise."
 ];
+
 module.exports = {
   name: 'heartbreak',
   category: 'fun',
   description: 'Thoughts on heartbreak',
   async execute(sock, msg, args) {
     const random = heartbreak[Math.floor(Math.random() * heartbreak.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `💔 *Heartbreak thought for @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `💔 *Heartbreak thought*\n\n${random}`
+    }, { quoted: msg });
   }
 };
