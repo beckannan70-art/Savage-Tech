@@ -22,13 +22,10 @@ module.exports = {
   category: 'download',
   description: 'Download from snapchat',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     const url = args[0];
-    if (!url) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .snapchat <URL>' });
-    if (!url.startsWith('http')) return sock.sendMessage(msg.key.remoteJid, { text: '❌ Provide a valid URL starting with http:// or https://' });
-
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
+    if (!url) return await sock.sendMessage(from, { text: '❓ Usage: .snapchat <URL>' }, { quoted: msg });
+    if (!url.startsWith('http')) return await sock.sendMessage(from, { text: '❌ Provide a valid URL starting with http:// or https://' }, { quoted: msg });
 
     try {
       const apiUrl = `https://apis.xwolf.space/download/snapchat?url=${encodeURIComponent(url)}`;
@@ -37,22 +34,19 @@ module.exports = {
 
       if (!data.success) throw new Error(data.error || 'Download failed');
 
-      // Determine content type based on command name
-      const isVideo = 'snapchat'.includes('video') || 'snapchat'.includes('mp4') || 'snapchat' === 'tiktok' || 'snapchat' === 'instagram' || 'snapchat' === 'facebook' || 'snapchat' === 'twitter' || 'snapchat' === 'snapchat';
-      const isAudio = 'snapchat'.includes('mp3') || 'snapchat'.includes('audio');
-      const isText = 'media' === 'text';
+      const isVideo = true; // snapchat is always video
+      const isAudio = false;
+      const isText = false;
 
       if (isText) {
-        // Send as text (info or search results)
-        let text = `📁 *Download Info (snapchat)*\n👤 REQUESTED BY: @${senderName}\n🚀 POWERED BY SAVAGE-CORE\n\n`;
+        let text = `📁 *Download Info (snapchat)*\n\n`;
         if (data.result) text += data.result;
         else if (data.info) text += JSON.stringify(data.info, null, 2);
         else text += JSON.stringify(data, null, 2);
-        await sock.sendMessage(msg.key.remoteJid, { text: text.slice(0, 2000), mentions: mention });
+        await sock.sendMessage(from, { text: text.slice(0, 2000) }, { quoted: msg });
         return;
       }
 
-      // For media: find download URL
       let downloadUrl = null;
       if (data.downloadUrl) downloadUrl = data.downloadUrl;
       else if (data.result && typeof data.result === 'string') downloadUrl = data.result;
@@ -61,28 +55,27 @@ module.exports = {
       else if (data.video && data.video.url) downloadUrl = data.video.url;
       else if (data.audio && data.audio.url) downloadUrl = data.audio.url;
       else if (Array.isArray(data.result) && data.result.length > 0) {
-        // Pick highest quality or first
         const best = data.result.find(r => r.quality === 'HD') || data.result[0];
         downloadUrl = best.url || best.downloadUrl;
       }
       if (!downloadUrl) throw new Error('No download link found in API response');
 
       const fileBuffer = await downloadFile(downloadUrl);
-      const maxSize = isVideo ? 64 * 1024 * 1024 : 16 * 1024 * 1024; // video 64MB, audio 16MB
+      const maxSize = isVideo ? 64 * 1024 * 1024 : 16 * 1024 * 1024;
       if (fileBuffer.length > maxSize) {
-        await sock.sendMessage(msg.key.remoteJid, { text: `⚠️ File too large (${(fileBuffer.length/1024/1024).toFixed(1)}MB). Direct link: ${downloadUrl}` });
+        await sock.sendMessage(from, { text: `⚠️ File too large (${(fileBuffer.length/1024/1024).toFixed(1)}MB). Direct link: ${downloadUrl}` }, { quoted: msg });
         return;
       }
 
-      const caption = `📥 *Download: snapchat*\n👤 REQUESTED BY: @${senderName}\n🚀 POWERED BY SAVAGE-CORE`;
+      const caption = `📥 *Download: snapchat*`;
       if (isVideo) {
-        await sock.sendMessage(msg.key.remoteJid, { video: fileBuffer, caption: caption, mentions: mention });
+        await sock.sendMessage(from, { video: fileBuffer, caption: caption }, { quoted: msg });
       } else {
-        await sock.sendMessage(msg.key.remoteJid, { audio: fileBuffer, mimetype: 'audio/mpeg', fileName: 'download.mp3', caption: caption, mentions: mention });
+        await sock.sendMessage(from, { audio: fileBuffer, mimetype: 'audio/mpeg', fileName: 'download.mp3', caption: caption }, { quoted: msg });
       }
     } catch (err) {
       console.error('snapchat error:', err);
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Download failed.\n${err.message}` });
+      await sock.sendMessage(from, { text: `❌ Download failed.\n${err.message}` }, { quoted: msg });
     }
   }
 };
