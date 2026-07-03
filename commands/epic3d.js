@@ -1,6 +1,7 @@
 const axios = require('axios');
 const https = require('https');
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+
 function downloadFile(url) {
   return new Promise((resolve, reject) => {
     https.get(url, { agent: httpsAgent }, (res) => {
@@ -15,27 +16,27 @@ function downloadFile(url) {
     }).on('error', reject);
   });
 }
+
 module.exports = {
   name: 'epic3d',
   category: 'Ephoto',
   description: 'Generate epic-3d text effect',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     const text = args.join(' ');
-    if (!text) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .epic3d <text>' });
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mentions = [senderJid];
+    if (!text) return sock.sendMessage(from, { text: '❓ Usage: .epic3d <text>' }, { quoted: msg });
+
     try {
       const apiUrl = `https://apis.xwolf.space/api/textpro/epic-3d?text=${encodeURIComponent(text)}`;
       const response = await axios.get(apiUrl, { httpsAgent });
       if (!response.data.success) throw new Error(response.data.error || 'API failure');
       if (!response.data.imageUrl) throw new Error('No imageUrl in response');
       const imgBuffer = await downloadFile(response.data.imageUrl);
-      const caption = `🎨 *Text Effect: epic3d*\n👤 REQUESTED BY: @${senderName}\n🚀 POWERED BY SAVAGE-CORE`;
-      await sock.sendMessage(msg.key.remoteJid, { image: imgBuffer, caption: caption, mentions: mentions });
+      const caption = '🎨 *Text Effect: epic3d*';
+      await sock.sendMessage(from, { image: imgBuffer, caption: caption }, { quoted: msg });
     } catch (err) {
       console.error('epic3d error:', err);
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Failed to generate image.\n${err.message}` });
+      await sock.sendMessage(from, { text: `❌ Failed to generate image.\n${err.message}` }, { quoted: msg });
     }
   }
 };
