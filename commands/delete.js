@@ -8,7 +8,7 @@ module.exports = {
 
         const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         if (!quotedMsg) {
-            return sock.sendMessage(from, { text: '⚠️ Reply to the message you want to delete.' }, { quoted: msg });
+            return await sock.sendMessage(from, { text: '⚠️ Reply to the message you want to delete.' }, { quoted: msg });
         }
 
         let isAdmin = false;
@@ -28,7 +28,7 @@ module.exports = {
         const allowed = isArchitect || (isGroup && isAdmin);
 
         if (!allowed) {
-            return sock.sendMessage(from, { text: '❌ You need to be a group admin (or bot owner) to delete messages.' }, { quoted: msg });
+            return await sock.sendMessage(from, { text: '❌ You need to be a group admin (or bot owner) to delete messages.' }, { quoted: msg });
         }
 
         const ctx = msg.message.extendedTextMessage.contextInfo;
