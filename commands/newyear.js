@@ -30,18 +30,15 @@ const ny = [
   "Happy New Year! Let's party like it's 2025!",
   "Here's to a year of being unapologetically you."
 ];
+
 module.exports = {
   name: 'newyear',
   category: 'fun',
   description: 'New Year wishes',
   async execute(sock, msg, args) {
     const random = ny[Math.floor(Math.random() * ny.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `🎆 *Happy New Year, @${senderName}!*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `🎆 *Happy New Year!*\n\n${random}`
+    }, { quoted: msg });
   }
 };
