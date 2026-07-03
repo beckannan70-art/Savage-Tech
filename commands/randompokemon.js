@@ -9,7 +9,7 @@ module.exports = {
     try {
       const res = await axios.get('https://apis.xwolf.space/api/pokemon/random');
       const data = res.data;
-      if (!data.success) return sock.sendMessage(from, { text: '❌ Could not fetch random Pokemon.' });
+      if (!data.success) return await sock.sendMessage(from, { text: '❌ Could not fetch random Pokemon.' }, { quoted: msg });
 
       const types = data.types?.join(', ') || 'N/A';
       const abilities = data.abilities?.map(a => a.name).join(', ') || 'N/A';
@@ -43,7 +43,7 @@ module.exports = {
       }
     } catch (err) {
       console.error(err);
-      await sock.sendMessage(from, { text: '❌ API error.' });
+      await sock.sendMessage(from, { text: '❌ API error.' }, { quoted: msg });
     }
   }
 };
