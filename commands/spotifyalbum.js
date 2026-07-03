@@ -7,12 +7,12 @@ module.exports = {
   category: 'Audio',
   description: 'Get Spotify metadata (track, album, artist, playlist)',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     const query = args.join(' ');
-    if (!query) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .spotifyalbum <spotify_url_or_search_term>' });
+    if (!query) return await sock.sendMessage(from, { text: '❓ Usage: .spotifyalbum <spotify_url_or_search_term>' }, { quoted: msg });
 
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
+    const cmd = 'album';
+    const endpoint = 'album';
 
     try {
       let apiUrl;
@@ -22,17 +22,17 @@ module.exports = {
         apiUrl = `https://apis.xwolf.space/api/spotify/${endpoint}?q=${encodeURIComponent(query)}`;
       }
       const response = await axios.get(apiUrl, { httpsAgent });
-      let resultText = `🎵 *Spotify ${cmd.toUpperCase()}*\n👤 REQUESTED BY: @${senderName}\n🚀 POWERED BY SAVAGE-CORE\n\n`;
+      let resultText = `🎵 *Spotify ${cmd.toUpperCase()}*\n\n`;
       if (response.data.success) {
         const data = response.data.result || response.data;
         resultText += JSON.stringify(data, null, 2);
       } else {
         resultText += `❌ Error: ${response.data.error || 'Not found'}`;
       }
-      await sock.sendMessage(msg.key.remoteJid, { text: resultText.slice(0, 2000), mentions: mention });
+      await sock.sendMessage(from, { text: resultText.slice(0, 2000) }, { quoted: msg });
     } catch (err) {
       console.error('spotifyalbum error:', err);
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Failed: ${err.message}` });
+      await sock.sendMessage(from, { text: `❌ Failed: ${err.message}` }, { quoted: msg });
     }
   }
 };
