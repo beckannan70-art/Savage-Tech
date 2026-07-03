@@ -22,29 +22,28 @@ module.exports = {
   category: 'sports',
   description: 'Search player by name (sends image)',
   async execute(sock, msg, args) {
+    const from = msg.key.remoteJid;
     const query = args.join(' ');
-    if (!query) return sock.sendMessage(msg.key.remoteJid, { text: '❓ Usage: .searchplayer <player name>' });
-    const sender = msg.pushName || 'User';
-    const jid = msg.key.participant || msg.key.remoteJid;
+    if (!query) {
+      return await sock.sendMessage(from, { text: '❓ Usage: .searchplayer <player name>' }, { quoted: msg });
+    }
+
     try {
-      await sock.sendMessage(msg.key.remoteJid, { text: `🔍 Searching for "${query}"...`, mentions: [jid] });
+      await sock.sendMessage(from, { text: `🔍 Searching for "${query}"...` }, { quoted: msg });
       const res = await axios.get(`https://apis.xwolf.space/api/sports/search/player?q=${encodeURIComponent(query)}`, { httpsAgent: agent });
       if (!res.data.success || !res.data.result) throw new Error('No results');
       const p = res.data.result;
-      let caption = `⚽ *Player: ${p.name}*\n👤 REQUESTED BY: @${sender}\n\n`;
-      caption += `🏷️ ID: ${p.id}\n🎯 Sport: ${p.sport}\n📋 Team: ${p.team}\n🌍 Nationality: ${p.nationality}\n📍 Position: ${p.position}\n🎂 Born: ${p.dateBorn}\n┍━━━━━━━━━━━━━━━╼
-┃ 🚀 SΛVΛGΞ-TΞCH OS
-┕━━━━━━━━━━━━━━━╼`;
-      // If cutout image exists, use it; otherwise fallback to thumbnail
+      let caption = `⚽ *Player: ${p.name}*\n\n`;
+      caption += `🏷️ ID: ${p.id}\n🎯 Sport: ${p.sport}\n📋 Team: ${p.team}\n🌍 Nationality: ${p.nationality}\n📍 Position: ${p.position}\n🎂 Born: ${p.dateBorn}`;
       let imgUrl = p.cutout || p.thumbnail;
       if (imgUrl && imgUrl.startsWith('http')) {
         const imgBuffer = await downloadFile(imgUrl);
-        await sock.sendMessage(msg.key.remoteJid, { image: imgBuffer, caption: caption, mentions: [jid] });
+        await sock.sendMessage(from, { image: imgBuffer, caption: caption }, { quoted: msg });
       } else {
-        await sock.sendMessage(msg.key.remoteJid, { text: caption, mentions: [jid] });
+        await sock.sendMessage(from, { text: caption }, { quoted: msg });
       }
     } catch (err) {
-      await sock.sendMessage(msg.key.remoteJid, { text: `❌ Player not found: ${err.message}` });
+      await sock.sendMessage(from, { text: `❌ Player not found: ${err.message}` }, { quoted: msg });
     }
   }
 };
