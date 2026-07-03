@@ -40,7 +40,7 @@ module.exports = {
 
             await sock.sendMessage(from, {
                 image: { url: thumbnail },
-                caption: `🎥 *HD VIDEO*\n♡ *Title:* ${title}\n♡ *Duration:* ${duration}\n♡ *Views:* ${views}\n♡ *Author:* ${author}\n♡ *Status:* Downloading HD...\n\n_⚡ Powered by Savage-Tech_`
+                caption: `🎥 *HD VIDEO*\n♡ *Title:* ${title}\n♡ *Duration:* ${duration}\n♡ *Views:* ${views}\n♡ *Author:* ${author}\n♡ *Status:* Downloading HD...`
             }, { quoted: msg });
 
             const endpoints = [
@@ -93,7 +93,7 @@ module.exports = {
             await sock.sendMessage(from, {
                 video: { url: tempFile },
                 mimetype: 'video/mp4',
-                caption: `🎥 *HD: ${title}*\n_⚡ Powered by Savage-Tech_`
+                caption: `🎥 *HD: ${title}*`
             }, { quoted: msg });
 
             fs.unlinkSync(tempFile);
