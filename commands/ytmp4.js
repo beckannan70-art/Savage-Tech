@@ -2,6 +2,9 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const yts = require('yt-search');
+const https = require('https');
+
+const agent = new https.Agent({ rejectUnauthorized: false });
 
 module.exports = {
     name: 'ytmp4',
@@ -11,7 +14,7 @@ module.exports = {
         const from = msg.key.remoteJid;
         const query = args.join(' ');
         if (!query) {
-            return sock.sendMessage(from, { text: '🎥 Usage: .ytmp4 <song name or YouTube URL>' }, { quoted: msg });
+            return sock.sendMessage(from, { text: '❌ Usage: .ytmp4 <song name or YouTube URL>' }, { quoted: msg });
         }
 
         await sock.sendMessage(from, { text: '🔍 Searching for video...' }, { quoted: msg });
@@ -40,35 +43,32 @@ module.exports = {
 
             await sock.sendMessage(from, {
                 image: { url: thumbnail },
-                caption: `🎥 *YTMP4 CONVERTER*\n♡ *Title:* ${title}\n♡ *Duration:* ${duration}\n♡ *Views:* ${views}\n♡ *Author:* ${author}\n♡ *Status:* Converting...\n\n_⚡ Powered by Savage-Tech_`
+                caption: `🎥 *Video Info*\n♡ Title: ${title}\n♡ Duration: ${duration}\n♡ Views: ${views}\n♡ Author: ${author}\n♡ Status: Converting...`
             }, { quoted: msg });
 
+            const apiKey = 'wxa_f_9ddecf073b';
             const endpoints = [
-                `https://apis.xwolf.space/download/mp4?url=${encodeURIComponent(videoUrl)}`,
-                `https://apis.xwolf.space/download/video?url=${encodeURIComponent(videoUrl)}`,
-                `https://apis.xwolf.space/download/hd?url=${encodeURIComponent(videoUrl)}`
+                `https://apis.xwolf.space/download/mp4?url=${encodeURIComponent(videoUrl)}&key=${apiKey}`,
+                `https://apis.xwolf.space/download/video?url=${encodeURIComponent(videoUrl)}&key=${apiKey}`,
+                `https://apis.xwolf.space/download/hd?url=${encodeURIComponent(videoUrl)}&key=${apiKey}`
             ];
 
             let videoBuffer = null;
             for (const endpoint of endpoints) {
                 try {
-                    const response = await axios({
-                        method: 'get',
-                        url: endpoint,
+                    const response = await axios.get(endpoint, {
+                        httpsAgent: agent,
                         timeout: 30000,
                         headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36' }
                     });
-
                     let videoFileUrl = response.data.downloadUrl || response.data.downloaded_at || response.data.url || response.data.result?.url || response.data.link;
                     if (!videoFileUrl && response.data.mp4) {
                         videoFileUrl = typeof response.data.mp4 === 'string' ? response.data.mp4 : response.data.mp4.url;
                     }
-
                     if (videoFileUrl) {
-                        const videoRes = await axios({
-                            method: 'get',
-                            url: videoFileUrl,
+                        const videoRes = await axios.get(videoFileUrl, {
                             responseType: 'arraybuffer',
+                            httpsAgent: agent,
                             timeout: 120000,
                             headers: { 'User-Agent': 'Mozilla/5.0' }
                         });
@@ -97,7 +97,7 @@ module.exports = {
             await sock.sendMessage(from, {
                 video: { url: tempFile },
                 mimetype: 'video/mp4',
-                caption: `🎥 *${title}*\n_⚡ Powered by Savage-Tech_`
+                caption: `🎥 *${title}*`
             }, { quoted: msg });
 
             fs.unlinkSync(tempFile);
