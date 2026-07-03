@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 module.exports = {
     name: "addsudo",
     category: "owner",
@@ -39,6 +42,14 @@ module.exports = {
         }
 
         global.sudoUsers.push(target);
+        
+        try {
+            const sudoPath = path.join(__dirname, '..', 'sudo.json');
+            fs.writeFileSync(sudoPath, JSON.stringify(global.sudoUsers, null, 2));
+        } catch (err) {
+            console.error('Failed to save sudo.json:', err);
+        }
+
         await sock.sendMessage(from, { text: `✅ ${target.split('@')[0]} added to sudo list.\n🔓 They can now use owner commands.` }, { quoted: msg });
     }
 };
