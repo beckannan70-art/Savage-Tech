@@ -30,18 +30,15 @@ const humor = [
   "My life is a constant battle between my love for food and my hate for exercise.",
   "I'm not a night owl, I'm a 24-hour disappointment."
 ];
+
 module.exports = {
   name: 'humor',
   category: 'fun',
   description: 'Relatable and funny thoughts',
   async execute(sock, msg, args) {
     const random = humor[Math.floor(Math.random() * humor.length)];
-    const senderName = msg.pushName || 'User';
-    const senderJid = msg.key.participant || msg.key.remoteJid;
-    const mention = [senderJid];
-    await sock.sendMessage(msg.key.remoteJid, { 
-      text: `😅 *For you, @${senderName}*\n\n${random}\n\n🚀 POWERED BY SAVAGE-CORE`, 
-      mentions: mention 
-    });
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: `😅 *For you*\n\n${random}`
+    }, { quoted: msg });
   }
 };
