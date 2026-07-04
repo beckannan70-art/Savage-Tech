@@ -1,9 +1,9 @@
 {
-  "prefix": "none",
+  "prefix": ".",
   "worktype": "public",
-  "antiDeleteEnabled": true,
+  "antiDeleteEnabled": false,
   "antiEditEnabled": false,
-  "antideleteMode": "chat",
+  "antideleteMode": "on",
   "autoViewStatus": "on",
   "autoTyping": "off",
   "autoRead": false,
@@ -16,10 +16,6 @@
     "mode": "off",
     "msg": "❌ Calls are not accepted."
   },
-  "groups": {
-    "120363409485728986@g.us": {},
-    "120363427770397986@g.us": {},
-    "120363409385668524@g.us": {}
-  },
+  "groups": {},
   "warnings": {}
 }
