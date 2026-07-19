@@ -21,23 +21,22 @@
 
 ### 🚀 DEPLOY SΛVΛGΞ-TECH
 <p align="center">
-  <a href="https://dashboard.render.com/static/new">
-    <img src="https://img.shields.io/badge/RENDER_DEPLOY-800080?style=for-the-badge&logo=render&logoColor=white" alt="Render Deploy">
+  <a href="https://dashboard.render.com/web/new">
+    <img src="https://img.shields.io/badge/RENDER_DEPLOY-007BFF?style=for-the-badge&logo=render&logoColor=white" alt="Render Deploy">
   </a>
   <a href="https://heroku.com/deploy?template=https://github.com/tysavage163/Savage-Tech">
-    <img src="https://img.shields.io/badge/HEROKU_DEPLOY-430098?style=for-the-badge&logo=heroku&logoColor=white" alt="Heroku Deploy">
+    <img src="https://img.shields.io/badge/HEROKU_DEPLOY-6A0DAD?style=for-the-badge&logo=heroku&logoColor=white" alt="Heroku Deploy">
   </a>
   <a href="https://app.koyeb.com/deploy?type=git&repository=github.com/tysavage163/Savage-Tech&branch=main">
-    <img src="https://img.shields.io/badge/KOYEB_DEPLOY-00A67C?style=for-the-badge&logo=koyeb&logoColor=white" alt="Koyeb Deploy">
+    <img src="https://img.shields.io/badge/KOYEB_DEPLOY-28A745?style=for-the-badge&logo=koyeb&logoColor=white" alt="Koyeb Deploy">
   </a>
   <a href="https://katabump.com">
-    <img src="https://img.shields.io/badge/🚀_KATABUMP_DEPLOY-FF4500?style=for-the-badge&logo=rocket&logoColor=white" alt="Katabump Deploy">
+    <img src="https://img.shields.io/badge/🚀_KATABUMP_DEPLOY-FF8C00?style=for-the-badge&logo=rocket&logoColor=white" alt="Katabump Deploy">
   </a>
 </p>
-
 <p align="center">
   <a href="https://bot-hosting.net">
-    <img src="https://img.shields.io/badge/DEPLOY_ON_BOT‑HOSTING.NET-000000?style=for-the-badge&logo=server&logoColor=white" alt="Bot-Hosting.net Deploy">
+    <img src="https://img.shields.io/badge/DEPLOY_ON_BOT‑HOSTING.NET-DC3545?style=for-the-badge&logo=server&logoColor=white" alt="Bot-Hosting.net Deploy">
   </a>
 </p>
 
